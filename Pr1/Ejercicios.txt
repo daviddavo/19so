@@ -1,0 +1,11 @@
+Ejercicio 1: Analizar el código del programa show_file.c, que lee byte a byte
+	el contenido de un fichero, cuyo nombre se pasa como parámetro, y lo
+	muestra por pantalla usando funcioens de la biblioteca estándar de C.
+	Responda a las siguientes preguntas:
+	- ¿Que comando se debe emplear para generar el ejecutable del programa
+	invocando directamente al compilador gcc?
+	! g++ show_file.c -o show_file
+
+	- Indique dos comandos para llevar a cabo respectivamente la
+	compilación del programa (generación de fichero objeto) y el enlazado
+	del mismo de forma independiente
