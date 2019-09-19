@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <err.h>
 
-#define BUFF_SIZE 4
+#define BUFF_SIZE 512
 
 int main(int argc, char* argv[]) {
 	FILE* file=NULL;
@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 
 	/* Read file byte by byte */
 	// while ((c = getc(file)) != EOF) {
-	while (( c = fread(buff, sizeof(char), BUFF_SIZE, file)) == BUFF_SIZE) {
+	while ((c = fread(buff, sizeof(char), BUFF_SIZE, file))) {
 		/* Print byte to stdout */
 		if (fwrite(buff, sizeof(char), c, stdout) != c) {
 			fclose(file);
