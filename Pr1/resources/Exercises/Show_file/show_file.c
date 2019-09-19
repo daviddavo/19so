@@ -2,9 +2,12 @@
 #include <stdlib.h>
 #include <err.h>
 
+#define BUFF_SIZE 4
+
 int main(int argc, char* argv[]) {
 	FILE* file=NULL;
-	int c,ret;
+	char buff[BUFF_SIZE];
+	int c;
 
 	if (argc!=2) {
 		fprintf(stderr,"Usage: %s <file_name>\n",argv[0]);
@@ -16,13 +19,12 @@ int main(int argc, char* argv[]) {
 		err(2,"The input file %s could not be opened",argv[1]);
 
 	/* Read file byte by byte */
-	while ((c = getc(file)) != EOF) {
+	// while ((c = getc(file)) != EOF) {
+	while (( c = fread(buff, sizeof(char), BUFF_SIZE, file)) == BUFF_SIZE) {
 		/* Print byte to stdout */
-		ret=putc((unsigned char) c, stdout);
-
-		if (ret==EOF){
+		if (fwrite(buff, sizeof(char), c, stdout) != c) {
 			fclose(file);
-			err(3,"putc() failed!!");
+			err(3, "putc() failed!!");
 		}
 	}
 
