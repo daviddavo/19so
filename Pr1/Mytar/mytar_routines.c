@@ -18,7 +18,9 @@ int
 copynFile(FILE * origin, FILE * destination, int nBytes)
 {
     char buf[F_BUFFER];
-	int steps = nBytes / F_BUFFER;
+    // En la división redondeamos hacia arriba para hacer el "ultimo paso"
+    // (Con el bufer medio lleno). También podemos usar (a+b-1)/b
+	int steps = nBytes / F_BUFFER + (nBytes % F_BUFFER != 0);
     int bytesread;
     for (int i = 0; i < steps; ++i) {
         if (!(bytesread = fread(buf, sizeof(char), F_BUFFER, origin))) {
@@ -59,10 +61,27 @@ loadstr(FILE * file)
  * the (name,size) pairs read from the tar file. Upon failure, the function returns NULL.
  */
 stHeaderEntry*
-readHeader(FILE * tarFile, int *nFiles)
+readHeader(FILE * tarFile, uint32_t *nFiles)
 {
-	// Complete the function
-	return NULL;
+	int i;
+    stHeaderEntry * h = NULL;
+
+    // Primero obtenemos nFiles
+    if (!fread(nFiles, sizeof(uint32_t), 1, tarFile)) return NULL;
+
+    h = malloc(sizeof(stHeaderEntry) * (*nFiles));
+
+    for (i = 0; i < *nFiles; ++i) {
+        // Leemos el nombre del fichero
+        h[i].name = loadstr(tarFile);
+        // Leemos el tamaño del fichero
+        if (!fread(&(h[i].size), sizeof(uint32_t), 1, tarFile)) {
+            free(h);
+            return NULL;
+        }
+    }
+
+	return h;
 }
 
 /** Creates a tarball archive 
@@ -117,10 +136,10 @@ createTar(uint32_t nFiles, char *fileNames[], char tarName[])
         }
 
         // Metemos el nombre de archivo en la cabecera
-        fputs(fileNames[i], tarFile);
         strSize = strlen(fileNames[i]) + 1;
         header[i].name = malloc(sizeof(char) * strSize);
         strncpy(header[i].name, fileNames[i], strSize);
+        fwrite(header[i].name, sizeof(char), strSize, tarFile);
 
         // Ahora el tamaño del fichero
         // También podríamos usar fstat
@@ -135,6 +154,8 @@ createTar(uint32_t nFiles, char *fileNames[], char tarName[])
         fclose(currentFile);
     }
 
+    // TODO: Arreglar memory leak. Cuando retornamos en mitad del bucle
+    // no liberamos la memoria ocupada por header
     for (i = 0; i < nFiles; ++i) {
         if ((currentFile = fopen(fileNames[i], "rb")) == NULL) {
             fprintf(stderr, "File %s could not be opened\n", fileNames[i]);
@@ -145,6 +166,8 @@ createTar(uint32_t nFiles, char *fileNames[], char tarName[])
             fprintf(stderr, "Could not copy file %s\n", fileNames[i]);
             return EXIT_FAILURE;
         }
+
+        free(header[i].name);
     }
 
     free(header);
