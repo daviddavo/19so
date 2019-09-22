@@ -8,7 +8,7 @@
 # 1. Comprobamos que el programa mytar está en el directorio actual y que es
 # ejecutable. En caso contrario mostramos un mensaje informativo por pantalla
 if [ ! -x ./mytar ]; then
-    echo "El ejecutable mytar no existe"
+    echo "El ejecutable mytar no existe">&2
     exit 2
 fi
 
@@ -33,22 +33,24 @@ head -c1024 /dev/urandom > file3.dat
 filearray=(file1.txt file2.txt file3.dat)
 
 # 5. Invocamos mytar
-../mytar -cf filetar.mtar ${filearray[@]}
-
-[ -f filetar.mtar ] || echo "El fichero filetar.mtar no se ha creado" && exit 1
+../mytar -cf filetar.mtar ${filearray[@]} || { echo "Error while creating mytar" >&2; exit 1; }
+[ -f filetar.mtar ] || { echo "El fichero filetar.mtar no se ha creado"; exit 1; }
 
 # 6 Creamos un directorio out/tmp y copiamos mtar al nuevo directorio
-mkdir out
+mkdir out || { echo "Failed to create dir out"; exit 1; }
 cp filetar.mtar out/
 
 # 7. Cambiamos al directorio out y extraemos el contenido del tarball
 cd out
-../../mytar -xf filetar.mtar
+../../mytar -xf filetar.mtar || { echo "Error while extracting mytar" >&2; exit 1; }
 
 # 8. Usamos diff para comparar los ficheros
 for i in "${filearray[@]}"; do
     echo $i
+    diff "../$i" "$i" || exit 1
 done;
 
 # 9. Si los tres ficheros son originales, mostramos "Correct" por pantalla y
 # retornamos 0. Sy hay algun error devolvemos 1
+echo "Correct"
+exit 0

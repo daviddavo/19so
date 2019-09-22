@@ -17,8 +17,18 @@ extern char *use;
 int
 copynFile(FILE * origin, FILE * destination, int nBytes)
 {
-	// Complete the function
-	return -1;
+    char buf[F_BUFFER];
+	int steps = nBytes / F_BUFFER;
+    int bytesread;
+    for (int i = 0; i < steps; ++i) {
+        if (!(bytesread = fread(buf, sizeof(char), F_BUFFER, origin))) {
+            return -1;
+        }
+
+        fwrite(buf, sizeof(char), bytesread, destination);
+    }
+
+	return 0;
 }
 
 /** Loads a string from a file.
@@ -77,10 +87,69 @@ readHeader(FILE * tarFile, int *nFiles)
  *
  */
 int
-createTar(int nFiles, char *fileNames[], char tarName[])
+createTar(uint32_t nFiles, char *fileNames[], char tarName[])
 {
-	// Complete the function
-	return EXIT_FAILURE;
+    FILE * currentFile = NULL;
+    FILE * tarFile = NULL;
+    stHeaderEntry * header = NULL;
+    int i, strSize;
+    uint32_t fSize;  // Independiente del SO
+
+    // 1 Abrimos el fichero mtar para escritura (fichero destino)
+    // TODO: See man errno to select a proper exit error
+    if ((tarFile = fopen(tarName, "wb")) == NULL) {
+        fprintf(stderr, "Tarfile %s could not be opened\n", tarName);
+        return EXIT_FAILURE;
+    }
+
+    // 2 Reservamos con malloc memoria para un array de stHeaderEntry
+    header = malloc(sizeof(stHeaderEntry) * nFiles);
+
+    // 3 Copiamos la cabecera al fichero mtar
+    // Copiamos nfiles
+    fwrite(&nFiles, sizeof(uint32_t), 1, tarFile);
+
+    // Por cada fichero...
+    for (i = 0; i < nFiles; ++i) {
+        if ((currentFile = fopen(fileNames[i], "rb")) == NULL) {
+            fprintf(stderr, "File %s could not be opened\n", fileNames[i]);
+            return EXIT_FAILURE;
+        }
+
+        // Metemos el nombre de archivo en la cabecera
+        fputs(fileNames[i], tarFile);
+        strSize = strlen(fileNames[i]) + 1;
+        header[i].name = malloc(sizeof(char) * strSize);
+        strncpy(header[i].name, fileNames[i], strSize);
+
+        // Ahora el tamaño del fichero
+        // También podríamos usar fstat
+        // TODO: Return EFBIG when fSize > 2^32
+        fseek(currentFile, 0, SEEK_END);
+        fSize = ftell(currentFile);
+        fseek(currentFile, 0, SEEK_SET);
+
+        header[i].size = fSize; 
+        fwrite(&fSize, sizeof(fSize), 1, tarFile);
+
+        fclose(currentFile);
+    }
+
+    for (i = 0; i < nFiles; ++i) {
+        if ((currentFile = fopen(fileNames[i], "rb")) == NULL) {
+            fprintf(stderr, "File %s could not be opened\n", fileNames[i]);
+            return EXIT_FAILURE;
+        }
+
+        if (copynFile(currentFile, tarFile, header[i].size) == -1) {
+            fprintf(stderr, "Could not copy file %s\n", fileNames[i]);
+            return EXIT_FAILURE;
+        }
+    }
+
+    free(header);
+
+	return EXIT_SUCCESS;
 }
 
 /** Extract files stored in a tarball archive

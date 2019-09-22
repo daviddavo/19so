@@ -2,6 +2,9 @@
 #define _MYTAR_H
 
 #include <limits.h>
+#include <stdint.h>
+
+#define F_BUFFER 8
 
 typedef enum{
   NONE,
@@ -15,7 +18,7 @@ typedef struct {
   unsigned int size;
 } stHeaderEntry;
 
-int createTar(int nFiles, char *fileNames[], char tarName[]);
+int createTar(uint32_t nFiles, char *fileNames[], char tarName[]);
 int extractTar(char tarName[]);
 
 
