@@ -47,8 +47,8 @@ copynFile(FILE * origin, FILE * destination, int nBytes)
 char*
 loadstr(FILE * file)
 {
-	// Complete the function
-	return NULL;
+    char buff[NAME_MAX]; // Defined in limit.h
+	return fgets(buff, NAME_MAX, file);
 }
 
 /** Read tarball header and store it in memory.
@@ -76,6 +76,7 @@ readHeader(FILE * tarFile, uint32_t *nFiles)
         h[i].name = loadstr(tarFile);
         // Leemos el tamaño del fichero
         if (!fread(&(h[i].size), sizeof(uint32_t), 1, tarFile)) {
+            fprintf(stderr, "Failed to load header for file: %s\n", h[i].name);
             free(h);
             return NULL;
         }
@@ -168,8 +169,11 @@ createTar(uint32_t nFiles, char *fileNames[], char tarName[])
         }
 
         free(header[i].name);
+
+        fclose(tarFile);
     }
 
+    fclose(tarFile);
     free(header);
 
 	return EXIT_SUCCESS;
@@ -192,6 +196,41 @@ createTar(uint32_t nFiles, char *fileNames[], char tarName[])
 int
 extractTar(char tarName[])
 {
-	// Complete the function
-	return EXIT_FAILURE;
+    int i;
+    uint32_t numFiles;
+    stHeaderEntry * header;
+    FILE * tarFile;
+    FILE * currentFile;
+
+    // Abrimos el fichero tar para lectura
+    if ((tarFile = fopen(tarName, "rb")) == NULL) {
+        fprintf(stderr, "Tarfile %s could not be opened\n", tarName);
+        return EXIT_FAILURE;
+    }
+
+    // Leemos la cabecera del fichero
+    header = readHeader(tarFile, &numFiles);
+
+    // Y ahora vamos copiando los ficheros
+    for (i = 0; i < numFiles; ++i) {
+        if ((currentFile = fopen(header[i].name, "wb")) == NULL) {
+            fprintf(stderr, "File %s could not be created\n", header[i].name);
+            return EXIT_FAILURE;
+        }
+
+        printf("[%d]: Creando fichero %s, tamaño %d Bytes...", i, header[i].name, header[i].size);
+        if (copynFile(tarFile, currentFile, header[i].size) == -1) {
+            printf("...Failed\n");
+            fprintf(stderr, "File %s could not be extracted\n", header[i].name);
+            return EXIT_FAILURE;
+        }
+
+        fclose(currentFile);
+    }
+
+    fclose(tarFile);
+    free(header);
+
+	return EXIT_SUCCESS;
 }
+

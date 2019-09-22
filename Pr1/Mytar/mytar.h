@@ -4,7 +4,7 @@
 #include <limits.h>
 #include <stdint.h>
 
-#define F_BUFFER 8
+#define F_BUFFER 1024
 
 typedef enum{
   NONE,
