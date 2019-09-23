@@ -1,0 +1,20 @@
+stages:
+    - build
+    - test
+
+build pr1:
+    stage: build
+    image: gcc
+    artifacts:
+        paths:
+            - Pr1/Mytar
+    script:
+        - cd Pr1/Mytar
+        - make
+
+test pr1:
+    stage: test
+    image: gcc
+    script:
+        - cd Pr1/Mytar
+        - ./test.sh
