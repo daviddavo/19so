@@ -20,14 +20,23 @@ copynFile(FILE * origin, FILE * destination, int nBytes)
     char buf[F_BUFFER];
     // En la división redondeamos hacia arriba para hacer el "ultimo paso"
     // (Con el bufer medio lleno). También podemos usar (a+b-1)/b
-	int steps = nBytes / F_BUFFER + (nBytes % F_BUFFER != 0);
+	int steps = nBytes / F_BUFFER;
+    int remainder = nBytes % F_BUFFER;
     int bytesread;
     for (int i = 0; i < steps; ++i) {
-        if (!(bytesread = fread(buf, sizeof(char), F_BUFFER, origin))) {
+        if ((bytesread = fread(buf, sizeof(char), F_BUFFER, origin)) != F_BUFFER) {
             return -1;
         }
 
         fwrite(buf, sizeof(char), bytesread, destination);
+    }
+
+    if (remainder) {
+        if ((bytesread = fread(buf, sizeof(char), remainder, origin)) != remainder) {
+            return -1;
+        }
+
+        fwrite(buf, sizeof(char), remainder, destination);
     }
 
 	return 0;
@@ -47,8 +56,17 @@ copynFile(FILE * origin, FILE * destination, int nBytes)
 char*
 loadstr(FILE * file)
 {
-    char buff[NAME_MAX]; // Defined in limit.h
-	return fgets(buff, NAME_MAX, file);
+    char * buff;
+    char c;
+    int i;
+
+    buff = malloc(sizeof(char) * NAME_MAX); // Defined in limit.h
+    i = 0;
+    while ((c = fgetc(file)) != '\0') {
+        buff[i++] = c;
+    }
+
+	return buff; 
 }
 
 /** Read tarball header and store it in memory.
@@ -67,13 +85,16 @@ readHeader(FILE * tarFile, uint32_t *nFiles)
     stHeaderEntry * h = NULL;
 
     // Primero obtenemos nFiles
-    if (!fread(nFiles, sizeof(uint32_t), 1, tarFile)) return NULL;
+    if (fread(nFiles, sizeof(uint32_t), 1, tarFile) != 1) return NULL;
 
     h = malloc(sizeof(stHeaderEntry) * (*nFiles));
 
     for (i = 0; i < *nFiles; ++i) {
         // Leemos el nombre del fichero
-        h[i].name = loadstr(tarFile);
+        if ((h[i].name = loadstr(tarFile)) == NULL) {
+            fprintf(stderr, "Failed to load filename %d\n", i);
+        }
+
         // Leemos el tamaño del fichero
         if (!fread(&(h[i].size), sizeof(uint32_t), 1, tarFile)) {
             fprintf(stderr, "Failed to load header for file: %s\n", h[i].name);
@@ -220,10 +241,12 @@ extractTar(char tarName[])
 
         printf("[%d]: Creando fichero %s, tamaño %d Bytes...", i, header[i].name, header[i].size);
         if (copynFile(tarFile, currentFile, header[i].size) == -1) {
-            printf("...Failed\n");
+            printf("Failed\n");
             fprintf(stderr, "File %s could not be extracted\n", header[i].name);
             return EXIT_FAILURE;
         }
+
+        printf("OK\n");
 
         fclose(currentFile);
     }

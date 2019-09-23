@@ -46,7 +46,7 @@ cd out
 
 # 8. Usamos diff para comparar los ficheros
 for i in "${filearray[@]}"; do
-    echo $i
+    echo diff "../$i" "$i"
     diff "../$i" "$i" || exit 1
 done;
 
