@@ -170,7 +170,7 @@ createTar(uint32_t nFiles, char *fileNames[], char tarName[])
 
         free(header[i].name);
 
-        fclose(tarFile);
+        fclose(currentFile);
     }
 
     fclose(tarFile);
