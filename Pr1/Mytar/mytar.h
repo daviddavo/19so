@@ -13,7 +13,9 @@ typedef enum{
   ERROR,
   CREATE,
   EXTRACT,
-  LIST
+  LIST,
+  APPEND,
+  REMOVE
 } flags;
 
 typedef struct {
@@ -24,5 +26,7 @@ typedef struct {
 int createTar(uint32_t nFiles, char *fileNames[], char tarName[]);
 int extractTar(char tarName[]);
 int listTar (char tarName[]);
+int appendTar(uint32_t nFiles, char *fileNames[], char tarName[]);
+int removeTar(uint32_t nFiles, char *fileNames[], char tarName[]);
 
 #endif /* _MYTAR_H */

@@ -277,3 +277,27 @@ int listTar (char tarName[]){//Argumento la ruta del fichero .mtar y muestra los
   return EXIT_SUCCESS;
 }
 
+// Se añade un nuevo fichero a un mtar existente con la opción -a
+int appendTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
+    // ¿Como???
+    // Opción A: Preguntar profe
+    // Opción B:
+    // Calcular el tamaño de la nueva cabecera y desplazar todos los datos del
+    // fichero N bytes a la derecha
+    // Meter la info del fichero en ese espacio
+    // Copiar el fichero al final
+
+    return EXIT_FAILURE;
+}
+
+// Quitamos un fichero de un mtar existente con la opción -r
+int removeTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
+    // ¿Como??
+    // ¿Abrimos el fichero dos veces?
+    // Modificamos la cabecera
+    // Re-escribimos la cabecera
+    // Movemos los archivos "hacia la izquierda" para rellenar el hueco dejado
+    // en la cabecera, pero nos saltamos el fichero que hemos borrado
+
+    return EXIT_FAILURE;
+}
