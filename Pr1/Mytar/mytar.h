@@ -23,6 +23,6 @@ typedef struct {
 
 int createTar(uint32_t nFiles, char *fileNames[], char tarName[]);
 int extractTar(char tarName[]);
-
+int listTar (char tarName[]);
 
 #endif /* _MYTAR_H */

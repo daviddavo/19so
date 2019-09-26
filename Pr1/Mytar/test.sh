@@ -57,6 +57,10 @@ echo "Correct"
 
 
 #Uso de la extensión 1
+diff -wZE <(../../mytar -lf filetar.mtar) - <<- EOF
+Fichero: file1.txt, Tam: 13 Bytes
+Fichero: file2.txt, Tam: 462 Bytes
+Fichero: file3.dat, Tam: 1024 Bytes
+EOF
 
-../../mytar -l  -f filetar.mtar
 exit 0
