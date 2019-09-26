@@ -53,4 +53,10 @@ done;
 # 9. Si los tres ficheros son originales, mostramos "Correct" por pantalla y
 # retornamos 0. Sy hay algun error devolvemos 1
 echo "Correct"
+#exit 0
+
+
+#Uso de la extensión 1
+
+../../mytar -l  -f filetar.mtar
 exit 0

@@ -214,9 +214,7 @@ createTar(uint32_t nFiles, char *fileNames[], char tarName[])
  * stored in the data section of the tarball.
  *
  */
-int
-extractTar(char tarName[])
-{
+int extractTar(char tarName[]){
     int i;
     uint32_t numFiles;
     stHeaderEntry * header;
@@ -254,6 +252,28 @@ extractTar(char tarName[])
     fclose(tarFile);
     free(header);
 
-	return EXIT_SUCCESS;
+ return EXIT_SUCCESS;
+}
+
+int listTar (char tarName[]){//Argumento la ruta del fichero .mtar y muestra los ficheros contenidos (nombre y tamaño) devuelve un 0 si funciona -l de opcion al main
+ int i;
+    uint32_t numFiles;
+    stHeaderEntry * header;
+    FILE * tarFile;
+    // Abrimos el fichero tar para lectura
+    if ((tarFile = fopen(tarName, "rb")) == NULL) {
+        fprintf(stderr, "Tarfile %s could not be opened\n", tarName);
+        return EXIT_FAILURE;
+    }
+    // Leemos la cabecera del fichero
+    header = readHeader(tarFile, &numFiles);
+    for (i=0;i < numFiles; ++i){
+	printf("Fichero: %s, Tam: %d Bytes \n", header[i].name, header[i].size);	
+    }
+
+
+    fclose(tarFile);
+    free(header);
+  return EXIT_SUCCESS;
 }
 

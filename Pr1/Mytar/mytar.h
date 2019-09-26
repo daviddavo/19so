@@ -12,7 +12,8 @@ typedef enum{
   NONE,
   ERROR,
   CREATE,
-  EXTRACT
+  EXTRACT,
+  LIST
 } flags;
 
 typedef struct {
