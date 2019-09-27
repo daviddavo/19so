@@ -63,4 +63,6 @@ Fichero: file2.txt, Tam: 462 Bytes
 Fichero: file3.dat, Tam: 1024 Bytes
 EOF
 
+$@ || { echo "List command doesn't produce expected output"; exit 1; }
+
 exit 0
