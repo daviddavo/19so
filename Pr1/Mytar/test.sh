@@ -50,19 +50,18 @@ for i in "${filearray[@]}"; do
     diff "../$i" "$i" || exit 1
 done;
 
+# Comprobamos que el tamaño de los ficheros es el mismo en el comando -list
+i=0
+../../mytar -lf filetar.mtar | while read l; do
+    [[ $l != $(stat --printf="Fichero: %n, Tam: %s Bytes\n" "${filearray[$i]}") ]] \
+        && { echo "Salida de list no corresponde con los ficheros\n > $1\n < $(!!)"; exit 1; }
+    ((i++))
+done
+
+[ $? -ne 0 ] && { echo "List command doesn't produce expected output"; exit 1; }
+
 # 9. Si los tres ficheros son originales, mostramos "Correct" por pantalla y
 # retornamos 0. Sy hay algun error devolvemos 1
 echo "Correct"
-#exit 0
-
-
-#Uso de la extensión 1
-diff -wZE <(../../mytar -lf filetar.mtar) - <<- EOF
-Fichero: file1.txt, Tam: 13 Bytes
-Fichero: file2.txt, Tam: 462 Bytes
-Fichero: file3.dat, Tam: 1024 Bytes
-EOF
-
-[ $? -ne 0 ] && { echo "List command doesn't produce expected output"; exit 1; }
 
 exit 0
