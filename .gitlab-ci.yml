@@ -5,9 +5,6 @@ stages:
 build pr1:
     stage: build
     image: gcc
-    only:
-        changes:
-            - Pr1/**/*
     artifacts:
         paths:
             - Pr1/Mytar
@@ -18,9 +15,6 @@ build pr1:
 test pr1:
     stage: test
     image: gcc
-    only:
-        changes:
-            - Pr1/**/
     script:
         - cd Pr1/Mytar
         - ./test.sh
