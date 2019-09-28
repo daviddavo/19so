@@ -7,7 +7,7 @@ build pr1:
     image: gcc
     only:
         changes:
-            - Pr1/
+            - Pr1/**/*
     artifacts:
         paths:
             - Pr1/Mytar
@@ -20,7 +20,7 @@ test pr1:
     image: gcc
     only:
         changes:
-            - Pr1/
+            - Pr1/**/
     script:
         - cd Pr1/Mytar
         - ./test.sh
