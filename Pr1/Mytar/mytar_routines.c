@@ -46,14 +46,11 @@ copynFile(FILE * origin, FILE * destination, int nBytes)
 int copyInternalFile(FILE * f, int nBytes, int offset) {
     char ** buf = NULL;
     int bufsize;
-    int *bytesread, steps, sumbytesread = 0, i, nBuffs = 2;
+    int *bytesread, steps, sumbytesread = 0, i, nBuffs = 2, chunks;
 
     if (offset == 0) return EXIT_SUCCESS;
 
-    if (offset >= F_BUFFER) {
-        fprintf(stderr, "Offset must be below %d\n", F_BUFFER);
-        return EXIT_FAILURE;
-    }
+    nBuffs = 1 + ((offset > 0)?(offset/F_BUFFER + 1):0);
 
     bufsize = F_BUFFER;
 
@@ -62,12 +59,16 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
     for (i = 0; i < nBuffs; i++)
         buf[i] = malloc(sizeof(char) * bufsize);
 
-    steps = nBytes / bufsize + (offset > 0 && (nBytes%bufsize > 0)?1:0) + 1;
+    chunks = nBytes / bufsize + ((nBytes%bufsize > 0)?1:0);
+    steps = chunks + ((offset > 0)?(offset/F_BUFFER + 1):0);
+    // printf("nBuffs: %d, nBytes: %d, offset: %d, chunks: %d, steps: %d, bufsize: %d\n", 
+    //         nBuffs, nBytes, offset, chunks, steps, bufsize);
     
-    for (i = 0; i <= steps; ++i) {
-        if (i < steps) {
+    for (i = 0; i < steps; ++i) {
+        if (i < steps - nBuffs + 1) {
+            // printf("ftell: 0x%08lX\n", ftell(f));
             if ((bytesread[i%nBuffs] = fread(buf[i%nBuffs], sizeof(char), bufsize, f)) == 0) {
-                fprintf(stderr, "Error while reading file at chunk %d/%d (Byte %d)\n", i, steps, i*nBytes/steps);
+                fprintf(stderr, "Error while reading file at chunk %d/%d (Byte %d)\n", i, chunks, i*nBytes);
                 return EXIT_FAILURE;
             }
             sumbytesread += bytesread[i%nBuffs];
@@ -75,8 +76,10 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
         
         if (i >= nBuffs - 1) {
             fseek(f, offset-sumbytesread, SEEK_CUR);
-            fwrite(buf[(i-1)%nBuffs], sizeof(char), bytesread[(i-1)%nBuffs], f);
-            sumbytesread -= bytesread[(i-1)%nBuffs];
+            // En lugar de i - (nBuffs + 1), gracias al algebra modular podemos
+            // poner i+1
+            fwrite(buf[(i+1)%nBuffs], sizeof(char), bytesread[(i+1)%nBuffs], f);
+            sumbytesread -= bytesread[(i+1)%nBuffs];
             fseek(f, sumbytesread-offset, SEEK_CUR);
         }
     }
