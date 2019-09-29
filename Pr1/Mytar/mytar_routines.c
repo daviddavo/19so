@@ -48,8 +48,10 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
     int bufsize;
     int *bytesread, steps, sumbytesread = 0, i, nBuffs = 2;
 
-    if (offset < 0 || offset >= F_BUFFER) {
-        fprintf(stderr, "Offset must be below 0 and %d\n", F_BUFFER);
+    if (offset == 0) return EXIT_SUCCESS;
+
+    if (offset >= F_BUFFER) {
+        fprintf(stderr, "Offset must be below %d\n", F_BUFFER);
         return EXIT_FAILURE;
     }
 
@@ -60,7 +62,7 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
     for (i = 0; i < nBuffs; i++)
         buf[i] = malloc(sizeof(char) * bufsize);
 
-    steps = nBytes / bufsize + ((nBytes%bufsize > 0)?1:0) + 1;
+    steps = nBytes / bufsize + (offset > 0 && (nBytes%bufsize > 0)?1:0) + 1;
     
     for (i = 0; i <= steps; ++i) {
         if (i < steps) {
@@ -438,9 +440,9 @@ int removeTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
     // Modificamos la cabecera
     // Re-escribimos la cabecera
     // Movemos los archivos "hacia la izquierda" para rellenar el hueco dejado
-    // en la cabecera, pero nos saltamos el fichero que hemos borrado
-    // Para ello usamos fread, fseek, fwrite. En este caso es más fácil que el
-    // append porque estamos escribiendo siempre en una parte que ya hemos escrito
+    // en la cabecera, pero nos saltamos el fichero que queremos borrar
+    // (Hacemos fseek hasta el principio, y entonces llamamos a copyInternalFile
+    // con offset -nBytesFicheroaborrar)
 
     return EXIT_FAILURE;
 }
