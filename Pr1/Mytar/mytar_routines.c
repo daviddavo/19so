@@ -1,7 +1,8 @@
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "mytar.h"
 
 extern char *use;
@@ -25,7 +26,7 @@ copynFile(FILE * origin, FILE * destination, int nBytes)
     int bytesread;
     for (int i = 0; i < steps; ++i) {
         if ((bytesread = fread(buf, sizeof(char), F_BUFFER, origin)) != F_BUFFER) {
-            return -1;
+            return EXIT_FAILURE;
         }
 
         fwrite(buf, sizeof(char), bytesread, destination);
@@ -33,13 +34,57 @@ copynFile(FILE * origin, FILE * destination, int nBytes)
 
     if (remainder) {
         if ((bytesread = fread(buf, sizeof(char), remainder, origin)) != remainder) {
-            return -1;
+            return EXIT_FAILURE;
         }
 
         fwrite(buf, sizeof(char), remainder, destination);
     }
 
-	return 0;
+	return EXIT_SUCCESS;
+}
+
+int copyInternalFile(FILE * f, int nBytes, int offset) {
+    char ** buf = NULL;
+    int bufsize;
+    int *bytesread, steps, sumbytesread = 0, i, nBuffs = 2;
+
+    if (offset < 0 || offset >= F_BUFFER) {
+        fprintf(stderr, "Offset must be below 0 and %d\n", F_BUFFER);
+        return EXIT_FAILURE;
+    }
+
+    bufsize = F_BUFFER;
+
+    buf = malloc(sizeof(char*) * nBuffs);
+    bytesread = malloc(sizeof(int*) * nBuffs);
+    for (i = 0; i < nBuffs; i++)
+        buf[i] = malloc(sizeof(char) * bufsize);
+
+    steps = nBytes / bufsize + ((nBytes%bufsize > 0)?1:0) + 1;
+    
+    for (i = 0; i <= steps; ++i) {
+        if (i < steps) {
+            if ((bytesread[i%nBuffs] = fread(buf[i%nBuffs], sizeof(char), bufsize, f)) == 0) {
+                fprintf(stderr, "Error while reading file at chunk %d/%d (Byte %d)\n", i, steps, i*nBytes/steps);
+                return EXIT_FAILURE;
+            }
+            sumbytesread += bytesread[i%nBuffs];
+        }
+        
+        if (i >= nBuffs - 1) {
+            fseek(f, offset-sumbytesread, SEEK_CUR);
+            fwrite(buf[(i-1)%nBuffs], sizeof(char), bytesread[(i-1)%nBuffs], f);
+            sumbytesread -= bytesread[(i-1)%nBuffs];
+            fseek(f, sumbytesread-offset, SEEK_CUR);
+        }
+    }
+
+    for (i = 0; i < 2; i++)
+        free(buf[i]);
+    free(buf);
+    free(bytesread);
+
+    return EXIT_SUCCESS; 
 }
 
 /** Loads a string from a file.
@@ -60,9 +105,15 @@ loadstr(FILE * file)
     char c;
     int i;
 
-    buff = malloc(sizeof(char) * NAME_MAX); // Defined in limit.h
-    i = 0;
+    i = 1;
     while ((c = fgetc(file)) != '\0') {
+        i++;
+    }
+
+    fseek(file, -i, SEEK_CUR);
+    buff = calloc(sizeof(char), i);
+    i = 0;
+    while((c = fgetc(file)) != '\0') {
         buff[i++] = c;
     }
 
@@ -79,13 +130,14 @@ loadstr(FILE * file)
  * the (name,size) pairs read from the tar file. Upon failure, the function returns NULL.
  */
 stHeaderEntry*
-readHeader(FILE * tarFile, uint32_t *nFiles)
+readHeaderandSize(FILE * tarFile, uint32_t *nFiles, size_t * headerSize)
 {
 	int i;
     stHeaderEntry * h = NULL;
 
     // Primero obtenemos nFiles
     if (fread(nFiles, sizeof(uint32_t), 1, tarFile) != 1) return NULL;
+    *headerSize = sizeof(uint32_t) * (*nFiles + 1);
 
     h = malloc(sizeof(stHeaderEntry) * (*nFiles));
 
@@ -94,6 +146,9 @@ readHeader(FILE * tarFile, uint32_t *nFiles)
         if ((h[i].name = loadstr(tarFile)) == NULL) {
             fprintf(stderr, "Failed to load filename %d\n", i);
         }
+
+        // Añadimos el tamaño del string al tamaño del header
+        *headerSize += strlen(h[i].name) + 1;
 
         // Leemos el tamaño del fichero
         if (!fread(&(h[i].size), sizeof(uint32_t), 1, tarFile)) {
@@ -104,6 +159,11 @@ readHeader(FILE * tarFile, uint32_t *nFiles)
     }
 
 	return h;
+}
+
+stHeaderEntry* readHeader(FILE * tarFile, uint32_t *nFiles) {
+    size_t _;
+    return readHeaderandSize(tarFile, nFiles, &_);
 }
 
 /** Creates a tarball archive 
@@ -250,6 +310,7 @@ int extractTar(char tarName[]){
     }
 
     fclose(tarFile);
+    for (i = 0; i < numFiles; ++i) free(header[i].name);
     free(header);
 
  return EXIT_SUCCESS;
@@ -273,21 +334,102 @@ int listTar (char tarName[]){//Argumento la ruta del fichero .mtar y muestra los
 
 
     fclose(tarFile);
+    for (i = 0; i < numFiles; ++i) free(header[i].name);
     free(header);
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 // Se añade un nuevo fichero a un mtar existente con la opción -a
 int appendTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
     // ¿Como???
     // Opción A: Preguntar profe
-    // Opción B:
+    // Opción B: 
+    // (Como esto no es Win2, podemos hacer cosas chulas...)
     // Calcular el tamaño de la nueva cabecera y desplazar todos los datos del
     // fichero N bytes a la derecha
     // Meter la info del fichero en ese espacio
     // Copiar el fichero al final
+    stHeaderEntry * h;
+    size_t prevHeaderSize, appendHeaderSize;
+    int i, bytestocopy, startwritting = 0;
+    uint32_t prevnFiles, newnFiles;
+    uint32_t * filesizes;
+    FILE * tarFile = NULL, *currentFile = NULL;
 
-    return EXIT_FAILURE;
+    // Abrimos el fichero para lectura y escritura con r+
+    if ((tarFile = fopen(tarName, "rb+")) == NULL) {
+        fprintf(stderr, "Tarfile %s could not be opened\n", tarName);
+        return EXIT_FAILURE;
+    }
+
+    // Calculamos cuantos bytes hay que mover
+    appendHeaderSize = sizeof(uint32_t) * nFiles;
+    for (i = 0; i < nFiles; ++i) {
+        appendHeaderSize += strlen(fileNames[i]) + 1;
+    }
+
+    // Leemos la cabecera anterior
+    h = readHeaderandSize(tarFile, &prevnFiles, &prevHeaderSize);
+
+    // Escribimos el nuevo numero de ficheros
+    fseek(tarFile, 0, SEEK_SET);
+    newnFiles = prevnFiles + nFiles; 
+    fwrite(&newnFiles, sizeof(uint32_t), 1, tarFile);
+
+    // Calculamos el n de bytes a copiar
+    fseek(tarFile, 0, SEEK_END);
+    bytestocopy = ftell(tarFile) - prevHeaderSize;
+
+    // Y ahora hacemos el Moisés
+    fseek(tarFile, prevHeaderSize, SEEK_SET);
+
+    if (copyInternalFile(tarFile, bytestocopy, appendHeaderSize)) {
+        fprintf(stderr, "Error moving internal file\n");
+        return EXIT_FAILURE;
+    }
+
+    // Rellenamos el hueco con la cabecera
+    fseek(tarFile, prevHeaderSize, SEEK_SET);
+    filesizes = malloc(sizeof(uint32_t) * nFiles);
+    for (i = 0; i < nFiles; ++i) {
+        if ( (currentFile = fopen(fileNames[i], "rb")) == NULL) {
+            fprintf(stderr, "Error while opening file %s\n", fileNames[i]);
+            return EXIT_FAILURE;
+        }
+
+        fseek(currentFile, 0, SEEK_END);
+        filesizes[i] = ftell(currentFile);
+        fclose(currentFile);
+    }
+
+    for (i = 0; i < nFiles; ++i) {
+        fwrite(fileNames[i], sizeof(char), strlen(fileNames[i]) + 1, tarFile);
+        fwrite(&filesizes[i], sizeof(uint32_t), 1, tarFile);
+    }
+
+    // Y ahora, al final, metemos nuestros fichero
+    startwritting = prevHeaderSize + appendHeaderSize;
+    for (i = 0; i < prevnFiles; ++i)
+        startwritting += h[i].size;
+
+    fseek(tarFile, startwritting, SEEK_SET);
+    for (i = 0; i < nFiles; ++i) {
+        if ( (currentFile = fopen(fileNames[i], "rb")) == NULL) {
+            fprintf(stderr, "Error while opening file %s\n", fileNames[i]);
+            return EXIT_FAILURE;
+        }
+
+        copynFile(currentFile, tarFile, filesizes[i]);
+
+        fclose(currentFile);
+    }
+
+    free(filesizes);
+    for (i = 0; i < prevnFiles; ++i) free(h[i].name);
+    free(h);
+    fclose(tarFile);
+
+    return EXIT_SUCCESS;
 }
 
 // Quitamos un fichero de un mtar existente con la opción -r

@@ -7,14 +7,16 @@ build pr1:
     image: gcc
     artifacts:
         paths:
-            - Pr1/Mytar
+            - Pr1/Mytar/mytar
     script:
         - cd Pr1/Mytar
         - make
 
 test pr1:
     stage: test
-    image: gcc
+    image: ubuntu 
+    before_script:
+        - apt-get update && apt-get --assume-yes install xxd file curl
     script:
         - cd Pr1/Mytar
         - ./test.sh
