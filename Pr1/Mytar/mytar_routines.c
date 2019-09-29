@@ -435,11 +435,12 @@ int appendTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
 // Quitamos un fichero de un mtar existente con la opción -r
 int removeTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
     // ¿Como??
-    // ¿Abrimos el fichero dos veces?
     // Modificamos la cabecera
     // Re-escribimos la cabecera
     // Movemos los archivos "hacia la izquierda" para rellenar el hueco dejado
     // en la cabecera, pero nos saltamos el fichero que hemos borrado
+    // Para ello usamos fread, fseek, fwrite. En este caso es más fácil que el
+    // append porque estamos escribiendo siempre en una parte que ya hemos escrito
 
     return EXIT_FAILURE;
 }

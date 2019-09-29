@@ -59,6 +59,8 @@ function testExtract {
 testExtract
 
 cd ..
+rm -r out/*
+
 # Comprobamos que el tamaño de los ficheros es el mismo en el comando -list
 function testList {
     i=0
@@ -88,6 +90,15 @@ cd out
 ../../mytar -xf filetar.mtar || { echo "Error while extracting mytar" >&2; exit 1; }
 testExtract
 cd ..
+rm -r out/*
+
+rm "file3.dat"
+filearray=( ${filearray[@]/file3.dat} )
+cp filetar.mtar out/
+cd out
+../../mytar -rf filetar.mtar file3.dat || { echo "Error while removing file" >&2; exit 1; }
+testList
+testExtract
 
 # 9. Si los tres ficheros son originales, mostramos "Correct" por pantalla y
 # retornamos 0. Sy hay algun error devolvemos 1
