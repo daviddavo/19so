@@ -1,7 +1,8 @@
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "mytar.h"
 
 extern char *use;
@@ -344,8 +345,9 @@ int appendTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
     // fichero N bytes a la derecha
     // Meter la info del fichero en ese espacio
     // Copiar el fichero al final
+    stHeaderEntry * h;
     size_t prevHeaderSize, appendHeaderSize;
-    int i, bytestocopy;
+    int i, bytestocopy, startwritting = 0;
     uint32_t prevnFiles, newnFiles;
     uint32_t * filesizes;
     FILE * tarFile = NULL, *currentFile = NULL;
@@ -363,7 +365,7 @@ int appendTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
     }
 
     // Leemos la cabecera anterior
-    readHeaderandSize(tarFile, &prevnFiles, &prevHeaderSize);
+    h = readHeaderandSize(tarFile, &prevnFiles, &prevHeaderSize);
 
     // Escribimos el nuevo numero de ficheros
     fseek(tarFile, 0, SEEK_SET);
@@ -402,8 +404,11 @@ int appendTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
     }
 
     // Y ahora, al final, metemos nuestros fichero
-    // TODO: ¿Why -3?
-    fseek(tarFile, -3, SEEK_END);
+    startwritting = prevHeaderSize + appendHeaderSize;
+    for (i = 0; i < prevnFiles; ++i)
+        startwritting += h[i].size;
+
+    fseek(tarFile, startwritting, SEEK_SET);
     for (i = 0; i < nFiles; ++i) {
         if ( (currentFile = fopen(fileNames[i], "rb")) == NULL) {
             fprintf(stderr, "Error while opening file %s\n", fileNames[i]);
@@ -416,6 +421,7 @@ int appendTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
     }
 
     free(filesizes);
+    free(h);
     fclose(tarFile);
 
     return EXIT_SUCCESS;

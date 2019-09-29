@@ -50,7 +50,7 @@ function testExtract {
         echo diff "../$i" "$i"
         diff "../$i" "$i" || { 
 			echo "Files are not the same" >&2
-			[[ $(file -b "$i") -eq "data" ]] && hexdump --version && diff <(hexdump -C $i) <(hexdump -C ../$i) >&2
+			[[ $(file -b "$i") -eq "data" ]] && diff <(xxd $i) <(xxd ../$i) >&2
 			exit 1
 		}
     done;
