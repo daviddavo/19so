@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #ifndef F_BUFFER
-#define F_BUFFER 1024
+#define F_BUFFER 4096 
 #endif
 
 typedef enum{

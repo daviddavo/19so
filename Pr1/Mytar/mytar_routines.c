@@ -24,6 +24,7 @@ copynFile(FILE * origin, FILE * destination, int nBytes)
 	int steps = nBytes / F_BUFFER;
     int remainder = nBytes % F_BUFFER;
     int bytesread;
+    
     for (int i = 0; i < steps; ++i) {
         if ((bytesread = fread(buf, sizeof(char), F_BUFFER, origin)) != F_BUFFER) {
             return EXIT_FAILURE;
@@ -249,7 +250,7 @@ createTar(uint32_t nFiles, char *fileNames[], char tarName[])
             return EXIT_FAILURE;
         }
 
-        if (copynFile(currentFile, tarFile, header[i].size) == -1) {
+        if (copynFile(currentFile, tarFile, header[i].size) != EXIT_SUCCESS) {
             fprintf(stderr, "Could not copy file %s\n", fileNames[i]);
             return EXIT_FAILURE;
         }
