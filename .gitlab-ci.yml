@@ -15,6 +15,8 @@ build pr1:
 test pr1:
     stage: test
     image: gcc
+    before_script:
+        - pkg add hexdump
     script:
         - cd Pr1/Mytar
         - ./test.sh

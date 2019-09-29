@@ -48,18 +48,28 @@ cd out
 function testExtract {
     for i in "${filearray[@]}"; do
         echo diff "../$i" "$i"
-        diff "../$i" "$i" || { echo "Files are not the same"; exit 1; }
+        diff "../$i" "$i" || { 
+			echo "Files are not the same" >&2
+			[[ $(file -b "$i") -eq "data" ]] && hexdump --version && diff <(hexdump -C $i) <(hexdump -C ../$i) >&2
+			exit 1
+		}
     done;
 }
 
 testExtract
 
+cd ..
 # Comprobamos que el tamaño de los ficheros es el mismo en el comando -list
 function testList {
     i=0
-    ../../mytar -lf filetar.mtar | while read l; do
+    ../mytar -lf filetar.mtar | while read l; do
         [[ $l != $(stat --printf="Fichero: %n, Tam: %s Bytes\n" "${filearray[$i]}") ]] \
-            && { echo "Salida de list no corresponde con los ficheros\n > $1\n < $(!!)"; exit 1; }
+            && { 
+				echo "Salida de list no corresponde con los ficheros" >&2
+				echo "> $l" >&2
+				stat --printf="< Fichero: %n, Tam %s Bytes\n" "${filearray[$i]}">&2
+				exit 1
+		 	}
         ((i++))
     done
 }
@@ -68,12 +78,16 @@ testList
 echo "List option correct"
 
 # Comprobamos que el append funciona bien
-curl -s https://upload.wikimedia.org/wikipedia/commons/a/af/Tux.png --output data4.png || echo "No tux for you!" > data4.png
-../../mytar -af filetar.mtar data4.png || { echo "Error while appending file"; exit 1; }
-filearray+=("data4.png")
+curl -s https://upload.wikimedia.org/wikipedia/commons/a/af/Tux.png --output file4.png || echo "No tux for you!" > file4.png
+../mytar -af filetar.mtar file4.png || { echo "Error while appending file" >&2; exit 1; }
+filearray+=("file4.png")
 
+testList 
+cp filetar.mtar out/
+cd out
+../../mytar -xf filetar.mtar || { echo "Error while extracting mytar" >&2; exit 1; }
 testExtract
-testList
+cd ..
 
 # 9. Si los tres ficheros son originales, mostramos "Correct" por pantalla y
 # retornamos 0. Sy hay algun error devolvemos 1
