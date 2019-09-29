@@ -48,8 +48,6 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
     int bufsize;
     int *bytesread, steps, sumbytesread = 0, i, nBuffs = 2;
 
-    printf("nBytes: %d, Offset %d\n", nBytes, offset);
-    printf("ftell: %ld\n", ftell(f));
     if (offset < 0 || offset >= F_BUFFER) {
         fprintf(stderr, "Offset must be below 0 and %d\n", F_BUFFER);
         return EXIT_FAILURE;
@@ -58,15 +56,13 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
     bufsize = F_BUFFER;
 
     buf = malloc(sizeof(char*) * nBuffs);
-    bytesread = malloc(sizeof(char*) * nBuffs);
+    bytesread = malloc(sizeof(int*) * nBuffs);
     for (i = 0; i < nBuffs; i++)
         buf[i] = malloc(sizeof(char) * bufsize);
 
     steps = nBytes / bufsize + ((nBytes%bufsize > 0)?1:0) + 1;
-    printf("s: %d, bufsize: %d, %d\n", steps, bufsize, nBytes/bufsize);
     
     for (i = 0; i <= steps; ++i) {
-        printf("i: %d, s: %d\n", i, steps);
         if (i < steps) {
             if ((bytesread[i%nBuffs] = fread(buf[i%nBuffs], sizeof(char), bufsize, f)) == 0) {
                 fprintf(stderr, "Error while reading file at chunk %d/%d (Byte %d)\n", i, steps, i*nBytes/steps);
@@ -109,9 +105,15 @@ loadstr(FILE * file)
     char c;
     int i;
 
-    buff = malloc(sizeof(char) * NAME_MAX); // Defined in limit.h
-    i = 0;
+    i = 1;
     while ((c = fgetc(file)) != '\0') {
+        i++;
+    }
+
+    fseek(file, -i, SEEK_CUR);
+    buff = calloc(sizeof(char), i);
+    i = 0;
+    while((c = fgetc(file)) != '\0') {
         buff[i++] = c;
     }
 
@@ -308,6 +310,7 @@ int extractTar(char tarName[]){
     }
 
     fclose(tarFile);
+    for (i = 0; i < numFiles; ++i) free(header[i].name);
     free(header);
 
  return EXIT_SUCCESS;
@@ -331,8 +334,9 @@ int listTar (char tarName[]){//Argumento la ruta del fichero .mtar y muestra los
 
 
     fclose(tarFile);
+    for (i = 0; i < numFiles; ++i) free(header[i].name);
     free(header);
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 // Se añade un nuevo fichero a un mtar existente con la opción -a
@@ -421,6 +425,7 @@ int appendTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
     }
 
     free(filesizes);
+    for (i = 0; i < prevnFiles; ++i) free(h[i].name);
     free(h);
     fclose(tarFile);
 
