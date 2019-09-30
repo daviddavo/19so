@@ -2,10 +2,23 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "mytar.h"
 
 extern char *use;
+static verbosity v = DEFAULT;
+
+// http://kirste.userpage.fu-berlin.de/chemnet/use/info/libc/libc_28.html
+void debug(const char * fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+
+    if (v >= DEBUG)
+        printf(fmt, args);
+
+    va_end(args);
+}
 
 /** Copy nBytes bytes from the origin file to the destination file.
  *
@@ -54,7 +67,7 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
 
     bufsize = F_BUFFER;
 
-    vprintf("ftellini: %lX (%d), nBytes: %X (%d), offset: %X (%d)\n", 
+    debug("ftellini: %lX (%d), nBytes: %X (%d), offset: %X (%d)\n", 
             ftell(f), ftell(f), nBytes, nBytes, offset, offset);
 
     buf = malloc(sizeof(char*) * nBuffs);
@@ -67,9 +80,9 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
     // printf("nBuffs: %d, nBytes: %d, offset: %d, chunks: %d, steps: %d, bufsize: %d\n", 
     //         nBuffs, nBytes, offset, chunks, steps, bufsize);
     
-    vprintf("nBuffs: %d, chunks: %d, steps: %d\n", nBuffs, chunks, steps);
+    debug("nBuffs: %d, chunks: %d, steps: %d\n", nBuffs, chunks, steps);
     for (i = 0; i < steps; ++i) {
-        vprintf("i: %3d, ftellpre: 0x%08lX", i, ftell(f));
+        debug("i: %3d, ftellpre: 0x%08lX", i, ftell(f));
         if (i <= steps - nBuffs) {
             if ((bytesread[i%nBuffs] = fread(buf[i%nBuffs], sizeof(char), 
                     (i == steps - nBuffs)?(nBytes%bufsize):bufsize, f)) == 0) {
@@ -79,7 +92,7 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
             sumbytesread += bytesread[i%nBuffs];
         }
 
-        vprintf(", br: %4d, ftellmid: 0x%08lX, ", bytesread[i%nBuffs], ftell(f));
+        debug(", br: %4d, ftellmid: 0x%08lX, ", bytesread[i%nBuffs], ftell(f));
         
         if (i >= nBuffs - 1) {
             fseek(f, offset-sumbytesread, SEEK_CUR);
@@ -90,10 +103,10 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
             fseek(f, sumbytesread-offset, SEEK_CUR);
         }
 
-        vprintf("ftellpos: 0x%08lX\n", ftell(f));
+        debug("ftellpos: 0x%08lX\n", ftell(f));
     }
 
-    vprintf("ftellfin: %lX (%d), sumbytesread: %d\n", ftell(f), ftell(f), sumbytesread);
+    debug("ftellfin: %lX (%d), sumbytesread: %d\n", ftell(f), ftell(f), sumbytesread);
 
     for (i = 0; i < 2; i++)
         free(buf[i]);
@@ -510,16 +523,9 @@ int removeTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
     fseek(tarFile, headeroffset, SEEK_CUR);
     copyInternalFile(tarFile, startwritting,-headeroffset);
 
-    printf("rmfsize: %d\n", rmfsize);
-    printf("start: %X (%d)\n", startwritting, startwritting);
-    printf("remaining: %d\n", remaining);
-    printf("headeroffset: %d\n", headeroffset);
     // Movemos los ficheros de después
     i = fseek(tarFile, rmfsize, SEEK_CUR);
-    printf("fseek result: %d\n", i);
-    printf("ftell: %lX\n", ftell(tarFile));
     i = copyInternalFile(tarFile, remaining, -headeroffset-rmfsize);
-    printf("%d\n", i);
 
     fclose(tarFile);
 

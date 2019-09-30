@@ -10,10 +10,6 @@
 
 #define VERBOSE
 
-#ifdef VERBOSE
-#define vprintf(...) printf(__VA_ARGS__)
-#endif
-
 typedef enum{
   NONE,
   ERROR,
@@ -24,11 +20,18 @@ typedef enum{
   REMOVE
 } flags;
 
+typedef enum {
+    DEFAULT,
+    DEBUG
+} verbosity;
+
 typedef struct {
   char* name;
   uint32_t size;
 } stHeaderEntry;
 
+void setVerbosity(verbosity v);
+void debug(const char *fmt, ...);
 int createTar(uint32_t nFiles, char *fileNames[], char tarName[]);
 int extractTar(char tarName[]);
 int listTar (char tarName[]);

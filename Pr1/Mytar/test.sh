@@ -59,7 +59,6 @@ function testExtract {
 testExtract
 
 cd ..
-rm -r out/*
 
 # Comprobamos que el tamaño de los ficheros es el mismo en el comando -list
 function testList {
@@ -88,8 +87,8 @@ filearray+=("file4.png")
 
 cp filetar.mtar out/
 cd out
-testList
 ../../mytar -xf filetar.mtar || { echo "Error while extracting mytar" >&2; exit 1; }
+testList
 testExtract
 cd ..
 rm -r out/*
