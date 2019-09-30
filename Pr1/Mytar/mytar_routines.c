@@ -85,13 +85,13 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
             fseek(f, offset-sumbytesread, SEEK_CUR);
             // En lugar de i - (nBuffs + 1), gracias al algebra modular podemos
             // poner i+1
-            fwrite(buf[(i+1)%nBuffs], sizeof(char), bytesread[(i+1)%nBuffs], f);
-            sumbytesread -= bytesread[(i+1)%nBuffs];
+            sumbytesread -= fwrite(buf[(i+1)%nBuffs], sizeof(char), bytesread[(i+1)%nBuffs], f);
+            //sumbytesread -= bytesread[(i+1)%nBuffs];
             fseek(f, sumbytesread-offset, SEEK_CUR);
         }
     }
 
-    vprintf("ftellfin: %lX (%d)\n", ftell(f), ftell(f));
+    vprintf("ftellfin: %lX (%d), sumbytesread: %d\n", ftell(f), ftell(f), sumbytesread);
 
     for (i = 0; i < 2; i++)
         free(buf[i]);
