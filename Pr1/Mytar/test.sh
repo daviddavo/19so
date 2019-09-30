@@ -64,7 +64,7 @@ rm -r out/*
 # Comprobamos que el tamaño de los ficheros es el mismo en el comando -list
 function testList {
     i=0
-    ../mytar -lf filetar.mtar | while read l; do
+    ../../mytar -lf filetar.mtar | while read l; do
         [[ $l != $(stat --printf="Fichero: %n, Tam: %s Bytes\n" "${filearray[$i]}") ]] \
             && { 
 				echo "Salida de list no corresponde con los ficheros" >&2
@@ -76,30 +76,32 @@ function testList {
     done
 }
 
+cd out
 testList
 echo "List option correct"
+cd ..
 
 # Comprobamos que el append funciona bien
 curl -s https://upload.wikimedia.org/wikipedia/commons/a/af/Tux.png --output file4.png || echo "No tux for you!" > file4.png
 ../mytar -af filetar.mtar file4.png || { echo "Error while appending file" >&2; exit 1; }
 filearray+=("file4.png")
 
-testList 
 cp filetar.mtar out/
 cd out
+testList
 ../../mytar -xf filetar.mtar || { echo "Error while extracting mytar" >&2; exit 1; }
 testExtract
 cd ..
 rm -r out/*
 
-filearray=( ${filearray[@]/file3.dat} )
+filearray=( ${filearray[@]/"file3.dat"} )
 cp filetar.mtar out/
 cd out
 ../../mytar -rf filetar.mtar file3.dat || { echo "Error while removing file" >&2; exit 1; }
 ../../mytar -xf filetar.mtar || { echo "Error extracting after removing" >&2; exit 1; }
 testExtract
-cd ..
 testList
+cd ..
 
 # 9. Si los tres ficheros son originales, mostramos "Correct" por pantalla y
 # retornamos 0. Sy hay algun error devolvemos 1

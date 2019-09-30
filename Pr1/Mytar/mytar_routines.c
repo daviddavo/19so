@@ -69,8 +69,8 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
     
     vprintf("nBuffs: %d, chunks: %d, steps: %d\n", nBuffs, chunks, steps);
     for (i = 0; i < steps; ++i) {
+        vprintf("i: %3d, ftellpre: 0x%08lX", i, ftell(f));
         if (i <= steps - nBuffs) {
-            vprintf("ftell: 0x%08lX\n", ftell(f));
             if ((bytesread[i%nBuffs] = fread(buf[i%nBuffs], sizeof(char), 
                     (i == steps - nBuffs)?(nBytes%bufsize):bufsize, f)) == 0) {
                 fprintf(stderr, "Error while reading file at chunk %d/%d (Byte %d)\n", i, chunks, i*nBytes);
@@ -79,7 +79,7 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
             sumbytesread += bytesread[i%nBuffs];
         }
 
-        vprintf("br: %d\n", bytesread[i%nBuffs]);
+        vprintf(", br: %4d, ftellmid: 0x%08lX, ", bytesread[i%nBuffs], ftell(f));
         
         if (i >= nBuffs - 1) {
             fseek(f, offset-sumbytesread, SEEK_CUR);
@@ -89,6 +89,8 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
             //sumbytesread -= bytesread[(i+1)%nBuffs];
             fseek(f, sumbytesread-offset, SEEK_CUR);
         }
+
+        vprintf("ftellpos: 0x%08lX\n", ftell(f));
     }
 
     vprintf("ftellfin: %lX (%d), sumbytesread: %d\n", ftell(f), ftell(f), sumbytesread);
@@ -508,13 +510,12 @@ int removeTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
     fseek(tarFile, headeroffset, SEEK_CUR);
     copyInternalFile(tarFile, startwritting,-headeroffset);
 
-    printf("ftell: %lX (%ld)\n", ftell(tarFile), ftell(tarFile));
     printf("rmfsize: %d\n", rmfsize);
     printf("start: %X (%d)\n", startwritting, startwritting);
     printf("remaining: %d\n", remaining);
     printf("headeroffset: %d\n", headeroffset);
     // Movemos los ficheros de después
-    i = fseek(tarFile, headeroffset + rmfsize, SEEK_CUR);
+    i = fseek(tarFile, rmfsize, SEEK_CUR);
     printf("fseek result: %d\n", i);
     printf("ftell: %lX\n", ftell(tarFile));
     i = copyInternalFile(tarFile, remaining, -headeroffset-rmfsize);
