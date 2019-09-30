@@ -17,7 +17,9 @@ typedef enum{
   EXTRACT,
   LIST,
   APPEND,
-  REMOVE
+  REMOVE,
+  ALT_CREATE,
+  ALT_EXTRACT
 } flags;
 
 typedef enum {
@@ -37,5 +39,7 @@ int extractTar(char tarName[]);
 int listTar (char tarName[]);
 int appendTar(uint32_t nFiles, char *fileNames[], char tarName[]);
 int removeTar(uint32_t nFiles, char *fileNames[], char tarName[]);
+int altCreateTar(uint32_t nFiles, char * fileNames[], char tarName[]);
+int altExtractTar(char tarName[]);
 
 #endif /* _MYTAR_H */

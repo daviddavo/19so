@@ -535,3 +535,97 @@ int removeTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
 
     return EXIT_SUCCESS;
 }
+
+// Almancenamos en un orden distinto...
+// Numero de archivos
+// Tamaño total de los archivos
+// Nombre de los archivos con su tamaño, en orden
+int altCreateTar(uint32_t nFiles, char * fileNames[], char tarName[]) {
+    FILE * currentFile = NULL;
+    FILE * tarFile = NULL;
+    int i, strsize;
+    uint32_t * sizes = NULL;
+    uint64_t sumSize = 0;
+
+    if (( tarFile = fopen(tarName, "wb")) == NULL) {
+        fprintf(stderr, "Tarfile %s could not be opened\n", tarName);
+        return EXIT_FAILURE;
+    }
+
+    sizes = malloc(sizeof(uint32_t) * nFiles);
+    fwrite(&nFiles, sizeof(uint32_t), 1, tarFile);
+
+    fseek(tarFile, sizeof(uint64_t), SEEK_CUR);
+    for (i = 0; i < nFiles; i++) {
+        if ((currentFile = fopen(fileNames[i], "rb")) == NULL) {
+            fprintf(stderr, "Could not open %s\n", fileNames[i]);
+            return EXIT_FAILURE;
+        }
+
+        fseek(currentFile, 0, SEEK_END);
+        sumSize += (sizes[i] = ftell(currentFile));
+        rewind(currentFile);
+
+        copynFile(currentFile, tarFile, sizes[i]);
+
+        fclose(currentFile);
+    }
+
+    for (i = 0; i < nFiles; i++) {
+        strsize = strlen(fileNames[i]);
+        fwrite(fileNames[i], sizeof(char), strsize + 1, tarFile);
+        fwrite(&sizes[i], sizeof(uint32_t), 1, tarFile);
+    }
+
+    fseek(tarFile, sizeof(uint32_t), SEEK_SET);
+    fwrite(&sumSize, sizeof(uint64_t), 1, tarFile);
+
+    free(sizes);
+    fclose(tarFile);
+
+    return EXIT_SUCCESS;
+}
+int altExtractTar(char tarName[]) {
+    FILE * currentFile = NULL;
+    FILE * tarFile = NULL;
+    int i;
+    stHeaderEntry * tail;
+    uint32_t nFiles;
+    uint64_t sumSize = 0;
+
+    if ((tarFile = fopen(tarName, "rb")) == NULL) {
+        fprintf(stderr, "Tarfile %s could not be opened\n", tarName);
+        return EXIT_FAILURE;
+    }
+
+    fread(&nFiles, sizeof(uint32_t), 1, tarFile);
+    fread(&sumSize, sizeof(uint64_t), 1, tarFile);
+    fseek(tarFile, sumSize, SEEK_CUR);
+
+    tail = malloc(sizeof(stHeaderEntry) * nFiles);
+
+    for (i = 0; i < nFiles; ++i) {
+        tail[i].name = loadstr(tarFile);
+        fread(&(tail[i].size), sizeof(uint32_t), 1, tarFile);
+    }
+
+    fseek(tarFile, sizeof(uint32_t) + sizeof(uint64_t), SEEK_SET);
+
+    for (i = 0; i < nFiles; ++i) {
+        if ((currentFile = fopen(tail[i].name, "wb")) == NULL) {
+            fprintf(stderr, "File %s could not be opened\n", tail[i].name);
+            return EXIT_FAILURE;
+        }
+
+        printf("(Alt) Extracting %s, size: %d\n", tail[i].name, tail[i].size);
+        copynFile(tarFile, currentFile, tail[i].size);
+    }
+
+    for (i = 0; i < nFiles; ++i) free(tail[i].name);
+    free(tail);
+    fclose(tarFile);
+
+    return EXIT_FAILURE;
+}
+
+

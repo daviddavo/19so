@@ -4,7 +4,7 @@
        
 #include "mytar.h"
        
-char use[]="Usage: tar -d -c|x|l|a -f file_mytar [file1 file2 ...]\n";
+char use[]="Usage: tar -d -c|x|l|a|k|v -f file_mytar [file1 file2 ...]\n";
 
 int main(int argc, char *argv[]) {
 
@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
   //Parse command-line options
-  while((opt = getopt(argc, argv, "dcxlraf:")) != -1) {
+  while((opt = getopt(argc, argv, "dkvcxlraf:")) != -1) {
     switch(opt) {
       case 'd':
         setVerbosity(DEBUG);
@@ -40,6 +40,12 @@ int main(int argc, char *argv[]) {
 	    break;
       case 'r':
         flag=(flag==NONE)?REMOVE:ERROR;
+        break;
+      case 'k':
+        flag=(flag==NONE)?ALT_CREATE:ERROR;
+        break;
+      case 'v':
+        flag=(flag==NONE)?ALT_EXTRACT:ERROR;
         break;
       default:
         flag=ERROR;
@@ -80,6 +86,12 @@ int main(int argc, char *argv[]) {
       break;
     case REMOVE:
       retCode=removeTar(nExtra, &argv[optind], tarName);
+      break;
+    case ALT_CREATE:
+      retCode=altCreateTar(nExtra, &argv[optind], tarName);
+      break;
+    case ALT_EXTRACT:
+      retCode=altExtractTar(tarName);
       break;
     default:
       retCode=EXIT_FAILURE;
