@@ -92,13 +92,14 @@ testExtract
 cd ..
 rm -r out/*
 
-rm "file3.dat"
 filearray=( ${filearray[@]/file3.dat} )
 cp filetar.mtar out/
 cd out
 ../../mytar -rf filetar.mtar file3.dat || { echo "Error while removing file" >&2; exit 1; }
-testList
+../../mytar -xf filetar.mtar || { echo "Error extracting after removing" >&2; exit 1; }
 testExtract
+cd ..
+testList
 
 # 9. Si los tres ficheros son originales, mostramos "Correct" por pantalla y
 # retornamos 0. Sy hay algun error devolvemos 1
