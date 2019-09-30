@@ -24,7 +24,6 @@ copynFile(FILE * origin, FILE * destination, int nBytes)
 	int steps = nBytes / F_BUFFER;
     int remainder = nBytes % F_BUFFER;
     int bytesread;
-    
     for (int i = 0; i < steps; ++i) {
         if ((bytesread = fread(buf, sizeof(char), F_BUFFER, origin)) != F_BUFFER) {
             return EXIT_FAILURE;
@@ -447,6 +446,71 @@ int removeTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
     // en la cabecera, pero nos saltamos el fichero que queremos borrar
     // (Hacemos fseek hasta el principio, y entonces llamamos a copyInternalFile
     // con offset -nBytesFicheroaborrar)
+    int i, headeroffset, rmfsize, startwritting = 0, remaining = 0, j;
+	uint32_t numFiles;
+    stHeaderEntry * header;
+	FILE * tarFile;
 
-    return EXIT_FAILURE;
+    if (nFiles != 1) {
+        fprintf(stderr, "Solo se puede borrar un fichero\n");
+        return EXIT_FAILURE;
+    }
+
+	// Abrimos el fichero tar para lectura
+	if ((tarFile = fopen(tarName, "rb+")) == NULL) {
+	   fprintf(stderr, "Tarfile %s could not be opened\n", tarName);
+	   return EXIT_FAILURE;
+	}
+	// Leemos la cabecera del fichero
+	header = readHeader(tarFile, &numFiles);
+    i = 0;
+    startwritting = 0;
+    while (i < numFiles && strcmp(header[i].name, fileNames[0]) != 0) {
+        startwritting += header[i].size;
+        ++i;
+    }
+
+    if (i == numFiles) {
+        fprintf(stderr, "El fichero %s no está en el tarball %s\n", fileNames[0], tarName);
+        return EXIT_FAILURE;
+    } else {
+        for (j = i + 1, remaining = 0; j < numFiles; ++j) {
+            remaining += header[j].size;
+        }
+
+        headeroffset = sizeof(uint32_t) + strlen(header[i].name) + 1;
+        free(header[i].name);
+        rmfsize = header[i].size;
+        for (;i < numFiles - 1; ++i) {
+            header[i] = header[i+1];
+        }
+        numFiles--;
+    }
+
+    // Volvemos a escribir la cabecera
+    rewind(tarFile);
+    fwrite(&numFiles, sizeof(uint32_t), 1, tarFile);
+    for (i = 0; i < numFiles; i++) {
+        fwrite(header[i].name, sizeof(char), strlen(header[i].name) + 1, tarFile);
+        fwrite(&(header[i].size), sizeof(uint32_t), 1, tarFile);
+    }
+
+    // Movemos los ficheros anteriores al que borramos
+    fseek(tarFile, headeroffset, SEEK_CUR);
+    copyInternalFile(tarFile, startwritting,-headeroffset);
+
+    printf("ftell: %lX (%ld)\n", ftell(tarFile), ftell(tarFile));
+    printf("rmfsize: %d\n", rmfsize);
+    printf("start: %X (%d)\n", startwritting, startwritting);
+    printf("remaining: %d\n", remaining);
+    printf("headeroffset: %d\n", headeroffset);
+    // Movemos los ficheros de después
+    fseek(tarFile, headeroffset + rmfsize, SEEK_CUR);
+    printf("ftell: %lX\n", ftell(tarFile));
+    i = copyInternalFile(tarFile, remaining, -(headeroffset+rmfsize));
+    printf("%d\n", i);
+
+    fclose(tarFile);
+
+    return EXIT_SUCCESS;
 }
