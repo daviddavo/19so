@@ -5,7 +5,13 @@
 #include <stdint.h>
 
 #ifndef F_BUFFER
-#define F_BUFFER 4096 
+#define F_BUFFER 2048 
+#endif
+
+#define VERBOSE
+
+#ifdef VERBOSE
+#define vprintf(...) printf(__VA_ARGS__)
 #endif
 
 typedef enum{

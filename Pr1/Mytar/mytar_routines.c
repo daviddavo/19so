@@ -54,6 +54,9 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
 
     bufsize = F_BUFFER;
 
+    vprintf("ftellini: %lX (%d), nBytes: %X (%d), offset: %X (%d)\n", 
+            ftell(f), ftell(f), nBytes, nBytes, offset, offset);
+
     buf = malloc(sizeof(char*) * nBuffs);
     bytesread = malloc(sizeof(int*) * nBuffs);
     for (i = 0; i < nBuffs; i++)
@@ -64,15 +67,19 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
     // printf("nBuffs: %d, nBytes: %d, offset: %d, chunks: %d, steps: %d, bufsize: %d\n", 
     //         nBuffs, nBytes, offset, chunks, steps, bufsize);
     
+    vprintf("nBuffs: %d, chunks: %d, steps: %d\n", nBuffs, chunks, steps);
     for (i = 0; i < steps; ++i) {
-        if (i < steps - nBuffs + 1) {
-            // printf("ftell: 0x%08lX\n", ftell(f));
-            if ((bytesread[i%nBuffs] = fread(buf[i%nBuffs], sizeof(char), bufsize, f)) == 0) {
+        if (i <= steps - nBuffs) {
+            vprintf("ftell: 0x%08lX\n", ftell(f));
+            if ((bytesread[i%nBuffs] = fread(buf[i%nBuffs], sizeof(char), 
+                    (i == steps - nBuffs)?(nBytes%bufsize):bufsize, f)) == 0) {
                 fprintf(stderr, "Error while reading file at chunk %d/%d (Byte %d)\n", i, chunks, i*nBytes);
                 return EXIT_FAILURE;
             }
             sumbytesread += bytesread[i%nBuffs];
         }
+
+        vprintf("br: %d\n", bytesread[i%nBuffs]);
         
         if (i >= nBuffs - 1) {
             fseek(f, offset-sumbytesread, SEEK_CUR);
@@ -83,6 +90,8 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
             fseek(f, sumbytesread-offset, SEEK_CUR);
         }
     }
+
+    vprintf("ftellfin: %lX (%d)\n", ftell(f), ftell(f));
 
     for (i = 0; i < 2; i++)
         free(buf[i]);
@@ -505,9 +514,10 @@ int removeTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
     printf("remaining: %d\n", remaining);
     printf("headeroffset: %d\n", headeroffset);
     // Movemos los ficheros de después
-    fseek(tarFile, headeroffset + rmfsize, SEEK_CUR);
+    i = fseek(tarFile, headeroffset + rmfsize, SEEK_CUR);
+    printf("fseek result: %d\n", i);
     printf("ftell: %lX\n", ftell(tarFile));
-    i = copyInternalFile(tarFile, remaining, -(headeroffset+rmfsize));
+    i = copyInternalFile(tarFile, remaining, -headeroffset-rmfsize);
     printf("%d\n", i);
 
     fclose(tarFile);
