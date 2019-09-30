@@ -9,6 +9,10 @@
 extern char *use;
 static verbosity v = DEFAULT;
 
+void setVerbosity(verbosity verb) {
+    v = verb;
+}
+
 // http://kirste.userpage.fu-berlin.de/chemnet/use/info/libc/libc_28.html
 void debug(const char * fmt, ...) {
     va_list args;

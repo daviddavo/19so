@@ -30,7 +30,7 @@ typedef struct {
   uint32_t size;
 } stHeaderEntry;
 
-void setVerbosity(verbosity v);
+void setVerbosity(verbosity verb);
 void debug(const char *fmt, ...);
 int createTar(uint32_t nFiles, char *fileNames[], char tarName[]);
 int extractTar(char tarName[]);

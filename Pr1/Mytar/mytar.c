@@ -4,7 +4,7 @@
        
 #include "mytar.h"
        
-char use[]="Usage: tar -c|x|l|a -f file_mytar [file1 file2 ...]\n";
+char use[]="Usage: tar -d -c|x|l|a -f file_mytar [file1 file2 ...]\n";
 
 int main(int argc, char *argv[]) {
 
@@ -18,8 +18,11 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
   //Parse command-line options
-  while((opt = getopt(argc, argv, "cxlraf:")) != -1) {
+  while((opt = getopt(argc, argv, "dcxlraf:")) != -1) {
     switch(opt) {
+      case 'd':
+        setVerbosity(DEBUG);
+        break;
       case 'c':
         flag=(flag==NONE)?CREATE:ERROR;
         break;
