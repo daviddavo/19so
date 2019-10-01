@@ -110,7 +110,7 @@ rm -r out/*
 filearray=( ${filearray[@]/"file3.dat"} )
 cp filetar.mtar out/
 cd out
-../../mytar -drf filetar.mtar file3.dat || { echo "Error while removing file" >&2; exit 1; }
+../../mytar -rf filetar.mtar file3.dat || { echo "Error while removing file" >&2; exit 1; }
 ../../mytar -xf filetar.mtar || { echo "Error extracting after removing" >&2; exit 1; }
 testExtract
 testList
@@ -124,13 +124,10 @@ echo "Correct"
 # 10 Probar el almacenamiento en orden alternativo
 mkdir alt 
 cd ./alt
-pwd
 createFiles
-ls -l
-mkdir coso
-../../mytar -kf ./coso/fichAlt.mtar file1.txt file2.txt file3.dat || { echo "Error create alternative mtar" >&2; exit 1; }
-cd coso
-pwd
+mkdir out
+../../mytar -kf ./out/fichAlt.mtar file1.txt file2.txt file3.dat || { echo "Error create alternative mtar" >&2; exit 1; }
+cd out
 ../../../mytar -vf fichAlt.mtar || { echo "Error extracting alternative mtar" >&2; exit 1; }
 
 exit 0
