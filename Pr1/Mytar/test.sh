@@ -5,7 +5,7 @@
 # 1 - Program not working as specified
 # 2 - Program not found
 
-# 1. Comprobamos que el programa mytar está en el directorio actual y que es
+#1. Comprobamos que el programa mytar está en el directorio actual y que es
 # ejecutable. En caso contrario mostramos un mensaje informativo por pantalla
 if [ ! -x ./mytar ]; then
     echo "El ejecutable mytar no existe">&2
@@ -75,6 +75,18 @@ function testList {
     done
 }
 
+function createFiles {
+
+	# file1.txt con el contenido "Hello World!"
+
+	echo "Hello World!" > file1.txt
+	# file2.txt con una copia de las 10 primeras lineas de /etc/passwd
+	head -n10 /etc/passwd > file2.txt
+	# file3.dat con un contenido aleatorio binario de 1024 bytes, tomado del
+	# /dev/urandom
+	head -c1024 /dev/urandom > file3.dat
+}
+
 cd out
 testList
 echo "List option correct"
@@ -96,7 +108,7 @@ rm -r out/*
 filearray=( ${filearray[@]/"file3.dat"} )
 cp filetar.mtar out/
 cd out
-../../mytar -rf filetar.mtar file3.dat || { echo "Error while removing file" >&2; exit 1; }
+../../mytar -drf filetar.mtar file3.dat || { echo "Error while removing file" >&2; exit 1; }
 ../../mytar -xf filetar.mtar || { echo "Error extracting after removing" >&2; exit 1; }
 testExtract
 testList
@@ -105,5 +117,18 @@ cd ..
 # 9. Si los tres ficheros son originales, mostramos "Correct" por pantalla y
 # retornamos 0. Sy hay algun error devolvemos 1
 echo "Correct"
+
+
+# 10 Probar el almacenamiento en orden alternativo
+mkdir alt 
+cd ./alt
+pwd
+createFiles
+ls -l
+mkdir coso
+../../mytar -kf ./coso/fichAlt.mtar file1.txt file2.txt file3.dat || { echo "Error create alternative mtar" >&2; exit 1; }
+cd coso
+pwd
+../../../mytar -vf fichAlt.mtar || { echo "Error extracting alternative mtar" >&2; exit 1; }
 
 exit 0
