@@ -19,7 +19,7 @@ void debug(const char * fmt, ...) {
     va_start(args, fmt);
 
     if (v >= DEBUG)
-        printf(fmt, args);
+        vprintf(fmt, args);
 
     va_end(args);
 }
@@ -65,14 +65,14 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
     int bufsize;
     int *bytesread, steps, sumbytesread = 0, i, nBuffs = 2, chunks;
 
-    if (offset == 0) return EXIT_SUCCESS;
+    if (offset == 0) return EXIT_FAILURE;
 
     nBuffs = 1 + ((offset > 0)?(offset/F_BUFFER + 1):0);
 
     bufsize = F_BUFFER;
 
-    debug("ftellini: %lX (%d), nBytes: %X (%d), offset: %X (%d)\n", 
-            ftell(f), ftell(f), nBytes, nBytes, offset, offset);
+    debug("ftellini: %lX (%d), nBytes: %X (%d), offset: %X (%d), nBuffs %d\n", 
+            ftell(f), ftell(f), nBytes, nBytes, offset, offset, nBuffs);
 
     buf = malloc(sizeof(char*) * nBuffs);
     bytesread = malloc(sizeof(int*) * nBuffs);
@@ -89,7 +89,7 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
         debug("i: %3d, ftellpre: 0x%08lX", i, ftell(f));
         if (i <= steps - nBuffs) {
             if ((bytesread[i%nBuffs] = fread(buf[i%nBuffs], sizeof(char), 
-                    (i == steps - nBuffs)?(nBytes%bufsize):bufsize, f)) == 0) {
+                    ((i == steps - nBuffs)?(nBytes%bufsize):bufsize), f)) == 0) {
                 fprintf(stderr, "Error while reading file at chunk %d/%d (Byte %d)\n", i, chunks, i*nBytes);
                 return EXIT_FAILURE;
             }
@@ -112,7 +112,7 @@ int copyInternalFile(FILE * f, int nBytes, int offset) {
 
     debug("ftellfin: %lX (%d), sumbytesread: %d\n", ftell(f), ftell(f), sumbytesread);
 
-    for (i = 0; i < 2; i++)
+    for (i = 0; i < nBuffs; i++)
         free(buf[i]);
     free(buf);
     free(bytesread);
@@ -383,7 +383,8 @@ int appendTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
     // Meter la info del fichero en ese espacio
     // Copiar el fichero al final
     stHeaderEntry * h;
-    size_t prevHeaderSize, appendHeaderSize;
+    size_t prevHeaderSize;
+    int appendHeaderSize;
     int i, bytestocopy, startwritting = 0;
     uint32_t prevnFiles, newnFiles;
     uint32_t * filesizes;
@@ -506,7 +507,8 @@ int removeTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
             remaining += header[j].size;
         }
 
-        headeroffset = sizeof(uint32_t) + strlen(header[i].name) + 1;
+        headeroffset = (int) sizeof(uint32_t) + (int) strlen(header[i].name) + 1;
+        debug("ho: %X(%d), -ho: %X (%d)\n", headeroffset, headeroffset, -headeroffset, -headeroffset);
         free(header[i].name);
         rmfsize = header[i].size;
         for (;i < numFiles - 1; ++i) {
@@ -522,10 +524,11 @@ int removeTar(uint32_t nFiles, char *fileNames[], char tarName[]) {
         fwrite(header[i].name, sizeof(char), strlen(header[i].name) + 1, tarFile);
         fwrite(&(header[i].size), sizeof(uint32_t), 1, tarFile);
     }
-
+    
     // Movemos los ficheros anteriores al que borramos
     fseek(tarFile, headeroffset, SEEK_CUR);
-    copyInternalFile(tarFile, startwritting,-headeroffset);
+    debug("ho: %X(%d), -ho: %X (%d)\n", headeroffset, headeroffset, -headeroffset, -headeroffset);
+    copyInternalFile(tarFile, startwritting, -headeroffset);
 
     // Movemos los ficheros de después
     i = fseek(tarFile, rmfsize, SEEK_CUR);
