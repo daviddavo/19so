@@ -628,7 +628,7 @@ int altExtractTar(char tarName[]) {
     free(tail);
     fclose(tarFile);
 
-    return EXIT_FAILURE;
+    return EXIT_SUCCESS;
 }
 
 
