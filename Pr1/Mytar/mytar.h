@@ -1,3 +1,5 @@
+//David Cantador Piedras ***REMOVED***
+//David Davó Laviña ***REMOVED***
 #ifndef _MYTAR_H
 #define _MYTAR_H
 

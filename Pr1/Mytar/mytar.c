@@ -1,9 +1,10 @@
+//David Cantador Piedras ***REMOVED***
+//David Davó Laviña ***REMOVED***
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
        
 #include "mytar.h"
-       
 char use[]="Usage: tar -d -c|x|l|a|k|v -f file_mytar [file1 file2 ...]\n";
 
 int main(int argc, char *argv[]) {

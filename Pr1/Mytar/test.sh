@@ -1,4 +1,6 @@
 #!/bin/bash
+# David Cantador Piedras ***REMOVED***
+# David Davó Laviña ***REMOVED***
 
 # STATUS:
 # 0 - No errors
