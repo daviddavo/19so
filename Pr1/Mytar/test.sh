@@ -1,4 +1,6 @@
 #!/bin/bash
+# David Cantador Piedras 51120722w
+# David Davó Laviña 02581158Y
 
 # STATUS:
 # 0 - No errors

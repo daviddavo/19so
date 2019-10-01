@@ -1,3 +1,5 @@
+//David Cantador Piedras 51120722w
+//David Davó Laviña 02581158Y
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>

@@ -1,3 +1,5 @@
+//David Cantador Piedras 51120722w
+//David Davó Laviña 02581158Y
 #ifndef _MYTAR_H
 #define _MYTAR_H
 
