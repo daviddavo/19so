@@ -1,3 +1,5 @@
+//David Cantador Piedras ***REMOVED***
+//David Davó Laviña ***REMOVED***
 #include <stdio.h>
 #include <stdlib.h>
 #include <err.h>

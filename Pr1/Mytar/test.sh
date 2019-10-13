@@ -1,11 +1,13 @@
 #!/bin/bash
+# David Cantador Piedras ***REMOVED***
+# David Davó Laviña ***REMOVED***
 
 # STATUS:
 # 0 - No errors
 # 1 - Program not working as specified
 # 2 - Program not found
 
-# 1. Comprobamos que el programa mytar está en el directorio actual y que es
+#1. Comprobamos que el programa mytar está en el directorio actual y que es
 # ejecutable. En caso contrario mostramos un mensaje informativo por pantalla
 if [ ! -x ./mytar ]; then
     echo "El ejecutable mytar no existe">&2
@@ -75,6 +77,18 @@ function testList {
     done
 }
 
+function createFiles {
+
+	# file1.txt con el contenido "Hello World!"
+
+	echo "Hello World!" > file1.txt
+	# file2.txt con una copia de las 10 primeras lineas de /etc/passwd
+	head -n10 /etc/passwd > file2.txt
+	# file3.dat con un contenido aleatorio binario de 1024 bytes, tomado del
+	# /dev/urandom
+	head -c1024 /dev/urandom > file3.dat
+}
+
 cd out
 testList
 echo "List option correct"
@@ -105,5 +119,15 @@ cd ..
 # 9. Si los tres ficheros son originales, mostramos "Correct" por pantalla y
 # retornamos 0. Sy hay algun error devolvemos 1
 echo "Correct"
+
+
+# 10 Probar el almacenamiento en orden alternativo
+mkdir alt 
+cd ./alt
+createFiles
+mkdir out
+../../mytar -kf ./out/fichAlt.mtar file1.txt file2.txt file3.dat || { echo "Error create alternative mtar" >&2; exit 1; }
+cd out
+../../../mytar -vf fichAlt.mtar || { echo "Error extracting alternative mtar" >&2; exit 1; }
 
 exit 0

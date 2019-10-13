@@ -1,3 +1,5 @@
+//David Cantador Piedras ***REMOVED***W
+//David Davó Laviña ***REMOVED***
 #include <stdio.h>
 
 typedef struct {
