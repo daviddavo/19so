@@ -474,6 +474,44 @@ static int my_truncate(const char *path, off_t size)
     return 0;
 }
 
+static int my_unlink(const char *path)
+{
+    int idxDir;
+    int i, b;
+
+    fprintf(stderr, "--->>>my_unlink: path %s\n", path);
+
+    if ((idxDir = findFileByName(&myFileSystem, (char *)path + 1)) == -1) {
+        return -ENOENT;
+    }
+
+    // Free used blocks
+    for (i = 0; i < myFileSystem.nodes[idxDir]->numBlocks; ++i) {
+        b = myFileSystem.nodes[idxDir]->blocks[i];
+        myFileSystem.bitMap[b] = 0;
+        // We could hide info with 0's, 1's or whatever
+        // But we will keep the file as if it were a real fs
+    }
+    updateBitmap(&myFileSystem);
+
+    // Free path (directory)
+    myFileSystem.directory.files[idxDir].freeFile = 1;
+    bzero(myFileSystem.directory.files[idxDir].fileName, MAX_LEN_FILE_NAME + 1);
+    myFileSystem.directory.numFiles--;
+
+    // Free node
+    myFileSystem.nodes[idxDir]->freeNode = 1;
+    updateNode(&myFileSystem, idxDir, myFileSystem.nodes[idxDir]);
+    free(myFileSystem.nodes[idxDir]);
+    myFileSystem.nodes[idxDir] = NULL;
+    myFileSystem.numFreeNodes++;
+
+    myFileSystem.superBlock.numOfFreeBlocks -= i;
+
+    updateSuperBlock(&myFileSystem);
+
+    return 0;
+}
 
 struct fuse_operations myFS_operations = {
     .getattr	= my_getattr,					// Obtain attributes from a file
@@ -483,5 +521,6 @@ struct fuse_operations myFS_operations = {
     .write		= my_write,						// Write data into a file already opened
     .release	= my_release,					// Close an opened file
     .mknod		= my_mknod,						// Create a new file
+    .unlink     = my_unlink,                    // Unlinks a file
 };
 

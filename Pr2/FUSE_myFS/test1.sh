@@ -34,6 +34,10 @@ echo 'This is file 2' > $MPOINT/file2.txt
 ls $MPOINT -la
 # read -p "Press enter..."
 
+echo "Removing file 2"
+unlink $MPOINT/file2.txt
+ls $MPOINT -la
+
 if [[ $automount = true ]]; then
     kill -s TERM -$fusepid
     $! || cat fuserr.log
