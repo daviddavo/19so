@@ -506,7 +506,7 @@ static int my_unlink(const char *path)
     myFileSystem.nodes[idxDir] = NULL;
     myFileSystem.numFreeNodes++;
 
-    myFileSystem.superBlock.numOfFreeBlocks -= i;
+    myFileSystem.superBlock.numOfFreeBlocks += i;
 
     updateSuperBlock(&myFileSystem);
 
