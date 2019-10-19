@@ -23,10 +23,12 @@ test pr1:
 
 build pr2:
     stage: build
-    image: gcc
+    image: ubuntu
     artifacts:
         paths:
-            - Pr1/FUSE_myFS/fs-fuse
+            - Pr2/FUSE_myFS/fs-fuse
+    before_script:
+        - apt-get update && apt-get --assume-yes install build-essential pkg-config libfuse-dev
     script:
         - cd Pr2/FUSE_myFS
         - make
@@ -35,10 +37,10 @@ test pr2:
     stage: test
     image: gcc
     before_script:
-        - apt-get update && apt-get --assume-yes install xxd file
+        - apt-get update && apt-get --assume-yes install xxd file fuse
     script:
         - cd Pr2/FUSE_myFS
-        - ./test1.sh
+        - ./test1.sh -m
         - ../my-fsck-static-64 virtual-disk
         - cat fuse.log
         - cat fuserr.log

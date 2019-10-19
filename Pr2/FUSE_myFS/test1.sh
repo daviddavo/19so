@@ -36,4 +36,5 @@ ls $MPOINT -la
 
 if [[ $automount = true ]]; then
     kill -s TERM -$fusepid
+    $! || cat fuserr.log
 fi
