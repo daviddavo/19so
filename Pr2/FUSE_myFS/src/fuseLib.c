@@ -498,6 +498,7 @@ static int my_unlink(const char *path)
     myFileSystem.directory.files[idxDir].freeFile = 1;
     bzero(myFileSystem.directory.files[idxDir].fileName, MAX_LEN_FILE_NAME + 1);
     myFileSystem.directory.numFiles--;
+    updateDirectory(&myFileSystem);
 
     // Free node
     myFileSystem.nodes[idxDir]->freeNode = 1;
