@@ -19,7 +19,7 @@ obj/%.o: src/%.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 test: $(TARGET)
-	./test1.sh
+	./test1.sh -m
 
 clean:
 	rm -f ./obj/*.o
