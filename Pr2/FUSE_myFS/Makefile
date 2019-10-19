@@ -5,6 +5,7 @@ OBJ_FILES := $(addprefix $(OBJDIR)/,$(notdir $(C_FILES:.c=.o)))
 CFLAGS := -g -Wall $(shell pkg-config fuse --cflags)
 #LDFLAGS := -lreadline $(shell pkg-config fuse --libs)
 LDFLAGS := $(shell pkg-config fuse --libs)
+.PHONY: clean test
 
 TARGET = fs-fuse
 
@@ -16,6 +17,9 @@ $(TARGET): $(OBJ_FILES)
 obj/%.o: src/%.c
 	mkdir -p $(OBJDIR)
 	$(CC) -c -o $@ $< $(CFLAGS)
+
+test: $(TARGET)
+	./test1.sh
 
 clean:
 	rm -f ./obj/*.o
