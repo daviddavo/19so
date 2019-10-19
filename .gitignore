@@ -4,3 +4,5 @@ testfile
 mytar
 badsort-ptr
 tmp/
+fs-fuse
+test/
