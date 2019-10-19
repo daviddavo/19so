@@ -6,3 +6,6 @@ badsort-ptr
 tmp/
 fs-fuse
 test/
+virtual-disk
+fuse.log
+fuserr.log

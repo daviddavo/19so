@@ -20,3 +20,26 @@ test pr1:
     script:
         - cd Pr1/Mytar
         - ./test.sh
+
+build pr2:
+    stage: build
+    image: gcc
+    artifacts:
+        paths:
+            - Pr1/FUSE_myFS/fs-fuse
+    script:
+        - cd Pr2/FUSE_myFS
+        - make
+
+test pr2:
+    stage: test
+    image: gcc
+    before_script:
+        - apt-get update && apt-get --assume-yes install xxd file
+    script:
+        - cd Pr2/FUSE_myFS
+        - ./test1.sh
+        - ../my-fsck-static-64 virtual-disk
+        - cat fuse.log
+        - cat fuserr.log
+        - xxd virtual-disk | head
