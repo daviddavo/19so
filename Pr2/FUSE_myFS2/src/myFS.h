@@ -48,6 +48,7 @@ typedef struct NodeStructure {
     DISK_LBA blocks[MAX_BLOCKS_PER_FILE];		// Blocks
     BOOLEAN freeNode;                        	// If the node is available
     int fileType;                               // File Type
+    int nlinks;                                 // Number of dir links
 } NodeStruct;
 
 #define NODES_PER_BLOCK (BLOCK_SIZE_BYTES/sizeof(NodeStruct))

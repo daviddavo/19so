@@ -184,7 +184,7 @@ static int my_getattr(const char *path, struct stat *stbuf)
         node = myFileSystem.nodes[myFileSystem.directory.files[idxDir].nodeIdx];
         stbuf->st_size = node->fileSize;
         stbuf->st_mode = ((node->fileType == NODE_FILE)?S_IFREG:S_IFLNK) | 0644;
-        stbuf->st_nlink = 1;
+        stbuf->st_nlink = node->nlinks;
         stbuf->st_uid = getuid();
         stbuf->st_gid = getgid();
         stbuf->st_mtime = stbuf->st_ctime = node->modificationTime;
@@ -498,6 +498,7 @@ static int my_mknod(const char *path, mode_t mode, dev_t device)
     myFileSystem.nodes[idxNodoI]->fileType = NODE_FILE;
     myFileSystem.nodes[idxNodoI]->modificationTime = time(NULL);
     myFileSystem.nodes[idxNodoI]->freeNode = false;
+    myFileSystem.nodes[idxNodoI]->nlinks = 1;
 
     reserveBlocksForNodes(&myFileSystem, myFileSystem.nodes[idxNodoI]->blocks, 0);
 
@@ -534,6 +535,7 @@ static int my_truncate(const char *path, off_t size)
 static int my_unlink(const char *path)
 {
     int idxDir;
+    NodeStruct * node;
     int i, b;
 
     fprintf(stderr, "--->>>my_unlink: path %s\n", path);
@@ -542,14 +544,7 @@ static int my_unlink(const char *path)
         return -EEXIST;
     }
 
-    // Free used blocks
-    for (i = 0; i < myFileSystem.nodes[idxDir]->numBlocks; ++i) {
-        b = myFileSystem.nodes[idxDir]->blocks[i];
-        myFileSystem.bitMap[b] = 0;
-        // We could hide info with 0's, 1's or whatever
-        // But we will keep the file as if it were a real fs
-    }
-    updateBitmap(&myFileSystem);
+    node = myFileSystem.nodes[myFileSystem.directory.files[idxDir].nodeIdx];
 
     // Free path (directory)
     myFileSystem.directory.files[idxDir].freeFile = 1;
@@ -558,15 +553,27 @@ static int my_unlink(const char *path)
     updateDirectory(&myFileSystem);
 
     // Free node
-    myFileSystem.nodes[idxDir]->freeNode = 1;
-    updateNode(&myFileSystem, idxDir, myFileSystem.nodes[idxDir]);
-    free(myFileSystem.nodes[idxDir]);
-    myFileSystem.nodes[idxDir] = NULL;
-    myFileSystem.numFreeNodes++;
+    node->nlinks--;
+    if (node->nlinks <= 0) {
+        // Free used blocks
+        for (i = 0; i < node->numBlocks; ++i) {
+            b = node->blocks[i];
+            myFileSystem.bitMap[b] = 0;
+            // We could hide info with 0's, 1's or whatever
+            // But we will keep the file as if it were a real fs
+        }
+        updateBitmap(&myFileSystem);
 
-    myFileSystem.superBlock.numOfFreeBlocks += i;
+        myFileSystem.nodes[idxDir]->freeNode = 1;
+        updateNode(&myFileSystem, idxDir, myFileSystem.nodes[idxDir]);
+        free(myFileSystem.nodes[idxDir]);
+        myFileSystem.nodes[idxDir] = NULL;
+        myFileSystem.numFreeNodes++;
 
-    updateSuperBlock(&myFileSystem);
+        myFileSystem.superBlock.numOfFreeBlocks += i;
+
+        updateSuperBlock(&myFileSystem);
+    }
 
     return 0;
 }
@@ -656,6 +663,39 @@ static int my_readlink(const char *path, char*buf, size_t bytes) {
     return 0;
 }
 
+// Crea un enlace lpath a un fichero path
+static int my_link(const char * path, const char * lpath) {
+    int idxDir;
+    int nodeIdx;
+
+    fprintf(stderr, "--->>>my_link: path %s, lpath: %s\n", path, lpath);
+
+    if (findFileByName(&myFileSystem, lpath+1) != -1) {
+        return -EEXIST;
+    }
+
+    if (strlen(lpath) > myFileSystem.superBlock.maxLenFileName) {
+        return -ENAMETOOLONG;
+    }
+
+    if (myFileSystem.directory.numFiles >= MAX_FILES_PER_DIRECTORY) {
+        return -ENOSPC;
+    }
+
+    if ((idxDir = findFileByName(&myFileSystem, path+1)) == -1) {
+        return -ENOENT;
+    }
+
+    nodeIdx = myFileSystem.directory.files[idxDir].nodeIdx;
+    idxDir = findFreeFile(&myFileSystem);
+    myFileSystem.directory.files[idxDir].freeFile = 0;
+    myFileSystem.directory.files[idxDir].nodeIdx = nodeIdx;
+    myFileSystem.nodes[nodeIdx]->nlinks++;
+    strcpy(myFileSystem.directory.files[idxDir].fileName, lpath+1);
+
+    return 0;
+}
+
 // https://libfuse.github.io/doxygen/structfuse__operations.html
 struct fuse_operations myFS_operations = {
     .getattr	= my_getattr,					// Obtain attributes from a file
@@ -668,6 +708,7 @@ struct fuse_operations myFS_operations = {
     .unlink     = my_unlink,                    // Unlinks a file
     .read       = my_read,                      // Reads the contents of a file
     .symlink    = my_symlink,                   // Symlinks two files
-    .readlink   = my_readlink                   // Reads symlink
+    .readlink   = my_readlink,                  // Reads symlink
+    .link       = my_link                       // Hardlinks a dir to inode
 };
 
