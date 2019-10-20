@@ -5,6 +5,7 @@ mytar
 badsort-ptr
 tmp/
 fs-fuse
+fs-fuse2
 test/
 virtual-disk
 fuse.log
