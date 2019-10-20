@@ -183,7 +183,7 @@ static int my_getattr(const char *path, struct stat *stbuf)
     if((idxDir = findFileByName(&myFileSystem, (char *)path + 1)) != -1) {
         node = myFileSystem.nodes[myFileSystem.directory.files[idxDir].nodeIdx];
         stbuf->st_size = node->fileSize;
-        stbuf->st_mode = S_IFREG | 0644;
+        stbuf->st_mode = ((node->fileType == NODE_FILE)?S_IFREG:S_IFLNK) | 0644;
         stbuf->st_nlink = 1;
         stbuf->st_uid = getuid();
         stbuf->st_gid = getgid();
@@ -495,6 +495,7 @@ static int my_mknod(const char *path, mode_t mode, dev_t device)
 
     myFileSystem.nodes[idxNodoI]->fileSize = 0;
     myFileSystem.nodes[idxNodoI]->numBlocks = 0;
+    myFileSystem.nodes[idxNodoI]->fileType = NODE_FILE;
     myFileSystem.nodes[idxNodoI]->modificationTime = time(NULL);
     myFileSystem.nodes[idxNodoI]->freeNode = false;
 
@@ -570,6 +571,68 @@ static int my_unlink(const char *path)
     return 0;
 }
 
+// See man 2 symlink for errors
+static int my_symlink(const char* to, const char* filename) {
+    int idxNodoI, idxDir;
+    NodeStruct * node;
+
+    fprintf(stderr, "--->>my_simlink: from: %s, to %s\n", filename, to);
+
+    if (myFileSystem.numFreeNodes <= 0) {
+        return -EDQUOT;
+    }
+
+    if (findFileByName(&myFileSystem, to+1) != -1) {
+        return -EEXIST;
+    }
+
+    if (strlen(to)+1 > myFileSystem.superBlock.maxLenFileName) {
+        return -ENAMETOOLONG;
+    }
+
+    if (myFileSystem.directory.numFiles >= MAX_FILES_PER_DIRECTORY) {
+        return -ENOSPC;
+    }
+
+    if ( (idxNodoI = findFreeNode(&myFileSystem)) == -1) {
+        // This shouldn't happen because we checked there are nodes available
+        // we have an inconsistent filesystem :(
+        return -EIO;
+    }
+
+    // Update nodes
+    node = myFileSystem.nodes[idxNodoI];
+    if (node == NULL) node = myFileSystem.nodes[idxNodoI] = malloc(sizeof(NodeStruct));
+    node->numBlocks = 1;
+    node->fileSize = strlen(to);
+    node->modificationTime = time(NULL);
+    node->freeNode = 0;
+    node->fileType = NODE_LINK;
+    myFileSystem.numFreeNodes--;
+
+    if (reserveBlocksForNodes(&myFileSystem, node->blocks, 1) == -1) return -EIO;
+    if (writeBlock(&myFileSystem, node->blocks[0], to) == -1) return -EIO;
+    updateBitmap(&myFileSystem);
+
+    // Update directory
+    if ( (idxDir = findFreeFile(&myFileSystem)) == -1) {
+        return -EIO;
+    }
+    myFileSystem.directory.files[idxDir].nodeIdx = idxNodoI;
+    strcpy(myFileSystem.directory.files[idxDir].fileName, filename+1);
+    myFileSystem.directory.files[idxDir].freeFile = 0;
+    myFileSystem.directory.numFiles++;
+
+    updateNode(&myFileSystem, idxNodoI, node);
+    updateDirectory(&myFileSystem);
+
+    fprintf(stderr, "idxNodoI: %d, IdxDir: %d\n", idxNodoI, idxDir);
+
+    sync();
+
+    return 0;
+}
+
 // https://libfuse.github.io/doxygen/structfuse__operations.html
 struct fuse_operations myFS_operations = {
     .getattr	= my_getattr,					// Obtain attributes from a file
@@ -580,6 +643,7 @@ struct fuse_operations myFS_operations = {
     .release	= my_release,					// Close an opened file
     .mknod		= my_mknod,						// Create a new file
     .unlink     = my_unlink,                    // Unlinks a file
-    .read       = my_read                       // Reads the contents of a file
+    .read       = my_read,                      // Reads the contents of a file
+    .symlink    = my_symlink                    // Symlinks two files
 };
 

@@ -14,12 +14,13 @@ void copyNode(NodeStruct *dest, NodeStruct *src)
     dest->fileSize = src->fileSize;
     dest->modificationTime = src->modificationTime;
     dest->freeNode = src->freeNode;
+    dest->fileType = src->fileType;
 
     for(i = 0; i < MAX_BLOCKS_PER_FILE; i++)
         dest->blocks[i] = src->blocks[i];
 }
 
-int findFileByName(MyFileSystem *myFileSystem, char *fileName)
+int findFileByName(const MyFileSystem *myFileSystem, const char *fileName)
 {
     int i;
 
@@ -438,7 +439,7 @@ int readBlock(MyFileSystem *myFileSystem, DISK_LBA blockNumber, void *buffer)
     return 0;
 }
 
-int writeBlock(MyFileSystem *myFileSystem, DISK_LBA blockNumber, void *buffer)
+int writeBlock(MyFileSystem *myFileSystem, DISK_LBA blockNumber, const void *buffer)
 {
 
     if(blockNumber < 0 || blockNumber >= myFileSystem->superBlock.diskSizeInBlocks) {
