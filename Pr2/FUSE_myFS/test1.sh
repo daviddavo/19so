@@ -45,7 +45,7 @@ cp './test/file1.txt' $MPOINT/
 
 echo "Creating file 2"
 echo 'This is file 2' > $MPOINT/file2.txt
-ls $MPOINT -la
+ls $MPOINT -lai
 # read -p "Press enter..."
 
 head -c 8000 /dev/urandom > './test/random.bin'
@@ -53,7 +53,7 @@ cp './test/random.bin' $MPOINT/
 
 echo "Removing file 2"
 rm $MPOINT/file2.txt
-ls $MPOINT -la
+ls $MPOINT -lai
 
 echo "Testing reading"
 cat $MPOINT/file1.txt > './test/file1.txt.mpoint'
@@ -68,7 +68,13 @@ if [[ $automount = true ]]; then
     fusepid=$!
     echo "Started fuse with pid $fusepid"
     wait_fuse $fusepid || exit 1
+
+    echo "Testing reading random.bin"
     diff -q $MPOINT/random.bin './test/random.bin' || exit 1
+
+    echo "Testing creating new file"
+    echo "Hello World!" > $MPOINT/newfile.txt
+    ls $MPOINT -lai
     
     fusermount -u ./mount-point || { echo "Couldn't umount"; exit 1; }
 fi
