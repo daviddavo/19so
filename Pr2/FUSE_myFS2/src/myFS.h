@@ -25,6 +25,10 @@
 #define DIRECTORY_IDX 2
 #define NODES_IDX 3
 
+#define NODE_FILE 0
+#define NODE_LINK 1
+#define NODE_DIR 2
+
 // STRUCTS
 typedef struct FileStructure {
     int  nodeIdx;                         	// Associated i-node
@@ -43,6 +47,7 @@ typedef struct NodeStructure {
     time_t modificationTime;              		// Modification time
     DISK_LBA blocks[MAX_BLOCKS_PER_FILE];		// Blocks
     BOOLEAN freeNode;                        	// If the node is available
+    int fileType;                               // File Type
 } NodeStruct;
 
 #define NODES_PER_BLOCK (BLOCK_SIZE_BYTES/sizeof(NodeStruct))
@@ -84,7 +89,7 @@ void copyNode(NodeStruct *dest, NodeStruct *src);
  * @param fileName name of the file we are looking for
  * @return index of the file in the array of files, -1 if the file is not found
  **/
-int findFileByName(MyFileSystem *myFileSystem, char *fileName);
+int findFileByName(const MyFileSystem *myFileSystem, const char *fileName);
 
 /**
  * @brief This function looks for a free entry in the array of files
@@ -242,7 +247,8 @@ int readBlock(MyFileSystem *myFileSystem, DISK_LBA blockNumber, void *buffer);
  * @param buffer data to be written
  * @return 0 on success and -1 on error
  **/
-int writeBlock(MyFileSystem *myFileSystem, DISK_LBA blockNumber, void *buffer);
+int writeBlock(MyFileSystem *myFileSystem, DISK_LBA blockNumber,
+    const void *buffer);
 
 
 #endif

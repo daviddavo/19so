@@ -12,9 +12,6 @@ while [ "$1" != "" ]; do
     esac
 done
 
-rm -R -f test
-mkdir test
-
 function wait_fuse {
     endseconds=$(($SECONDS+$TIMEOUT))
     while [[ $SECONDS -lt $endseconds ]] ; do
@@ -36,6 +33,15 @@ if [[ $automount = true ]]; then
     echo "Started fuse with pid $fusepid"
     wait_fuse $fusepid || exit 1 
 fi
+
+cp ./test/file1.txt $MPOINT
+cp ./test/random.bin $MPOINT
+
+cd $MPOINT
+ln -s random.bin link
+cat link
+ls -lai
+cd ..
 
 if [[ $automount = true ]]; then
     fusermount -u ./mount-point || { echo "Couldn't umount"; exit 1; }
