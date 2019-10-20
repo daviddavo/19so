@@ -300,7 +300,19 @@ int updateSuperBlock(MyFileSystem *myFileSystem)
 
 int readBitmap(MyFileSystem *myFileSystem)
 {
-    return -1;
+    if (lseek(myFileSystem->fdVirtualDisk, BLOCK_SIZE_BYTES * BITMAP_IDX, SEEK_SET) == -1) {
+        perror("Failed lseek in readBitmap");
+        return -1;
+    }
+
+    if (read(myFileSystem->fdVirtualDisk, myFileSystem->bitMap, sizeof(BIT) * NUM_BITS) == -1) {
+        perror("Failed reading in readBitmap");
+        return -1;
+    }
+
+    sync();
+
+    return 0;
 }
 
 
@@ -313,11 +325,30 @@ int readDirectory(MyFileSystem* myFileSystem)
 
 int readSuperblock(MyFileSystem* myFileSystem)
 {
-    return -1;
+    if(lseek(myFileSystem->fdVirtualDisk, BLOCK_SIZE_BYTES * SUPERBLOCK_IDX, SEEK_SET) == -1) {
+        perror("Failed lseek in readSuperblock");
+        return -1;
+    }
+
+    if(read(myFileSystem->fdVirtualDisk, &(myFileSystem->superBlock), sizeof(SuperBlockStruct)) == -1) {
+        perror("Failed read in readSuperblock");
+        return -1;
+    }
+
+    sync();
+
+    return 0;
 }
 
 int readInodes(MyFileSystem* myFileSystem)
 {
+    if(lseek(myFileSystem->fdVirtualDisk, BLOCK_SIZE_BYTES * NODES_IDX, SEEK_SET) == -1) {
+        perror("Failed lseek in readInodes");
+        return -1;
+    }
+
+    // No we're going to read each inode
+
     return -1;
 }
 
