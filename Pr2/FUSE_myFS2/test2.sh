@@ -42,6 +42,15 @@ cd $MPOINT
 ln -s random.bin link
 cd ..
 
+ls -laF $MPOINT
+diff -q ./test/random.bin $MPOINT/link || exit 1
+
+echo "Testing hard links"
+cd $MPOINT
+ln random.bin hlink
+cd ..
+
+ls -laF $MPOINT
 diff -q ./test/random.bin $MPOINT/link || exit 1
 
 if [[ $automount = true ]]; then
