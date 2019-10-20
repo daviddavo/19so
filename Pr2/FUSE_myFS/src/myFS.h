@@ -58,7 +58,8 @@ typedef struct SuperBlockStructure {
 } SuperBlockStruct;
 
 typedef struct MyFileSystemStructure {
-    int fdVirtualDisk;             		// File descriptor where the whole filesystem is stored
+    int fdVirtualDisk;             		// File descriptor where the whole
+                                        // filesystem is stored
     SuperBlockStruct superBlock;   		// Super block
     BIT bitMap[NUM_BITS];            	// Bit map
     DirectoryStruct directory;     		// Root directory
@@ -110,7 +111,8 @@ int findFreeNode(MyFileSystem *myFileSystem);
 int findNodeByPos(int nodeNum);
 
 /**
- * @brief It reads the inodes from disk and store them in new structures myFileSystem->nodes[i]
+ * @brief It reads the inodes from disk and store them in new structures
+ * myFileSystem->nodes[i]
  *
  * @param myFileSystem pointer to the FS
  * @return 0 on success and <0 on error
@@ -135,7 +137,8 @@ void initializeSuperBlock(MyFileSystem *myFileSystem, int diskSize);
 void myFree(MyFileSystem *myFileSystem);
 
 /**
- * @brief Formats the current disk. Saves all the bitmap, super block and the directory.
+ * @brief Formats the current disk. Saves all the bitmap, super block and the
+ * directory.
  *
  * @param myFileSystem pointer to the FS
  * @param diskSize size of the disk we are creating
@@ -167,7 +170,8 @@ int myQuota(MyFileSystem *myFileSystem);
  *
  * @param myFileSystem pointer to the FS
  * @param nodeNum inode number (position in backup file)
- * @param node inode structure that will contain the information read from the backup file
+ * @param node inode structure that will contain the information read from the
+ *  backup file
  * @return 0 on success and -1 on error
  **/
 int readNode(MyFileSystem *myFileSystem, int nodeNum, NodeStruct* node);
@@ -180,7 +184,8 @@ int readNode(MyFileSystem *myFileSystem, int nodeNum, NodeStruct* node);
  * @param numBlocks number of blocks we want to reserve
  * @return 0 on success and -1 on error
  **/
-int reserveBlocksForNodes(MyFileSystem* myFileSystem, DISK_LBA blockIdxs[], int numBlocks);
+int reserveBlocksForNodes(MyFileSystem* myFileSystem, DISK_LBA blockIdxs[],
+    int numBlocks);
 
 /**
  * @brief Writes all the information of the bitmap into the backup file
@@ -203,7 +208,8 @@ int updateDirectory(MyFileSystem *myFileSystem);
  *
  * @param myFileSystem pointer to the FS
  * @param inodeNum inode number
- * @param inode structure of the inode to write (it does not have to match with myFileSystem.inodes[inodeIdx])
+ * @param inode structure of the inode to write (it does not have to match
+ *  with myFileSystem.inodes[inodeIdx])
  * @return 0 on success and <0 on error
  **/
 int updateNode(MyFileSystem *myFileSystem, int nodeNum, NodeStruct *node);
