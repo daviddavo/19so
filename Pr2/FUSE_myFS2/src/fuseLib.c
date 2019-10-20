@@ -626,9 +626,32 @@ static int my_symlink(const char* to, const char* filename) {
     updateNode(&myFileSystem, idxNodoI, node);
     updateDirectory(&myFileSystem);
 
-    fprintf(stderr, "idxNodoI: %d, IdxDir: %d\n", idxNodoI, idxDir);
-
     sync();
+
+    return 0;
+}
+
+static int my_readlink(const char *path, char*buf, size_t bytes) {
+    int idxDir, idxNodeI;
+    char block[BLOCK_SIZE_BYTES];
+    NodeStruct * node;
+
+    fprintf(stderr, "--->>>my_readlink: path: %s, size: %ld\n", path, bytes); 
+
+    if ((idxDir = findFileByName(&myFileSystem, path+1)) == -1) {
+        return -ENOENT;
+    }
+
+    idxNodeI = myFileSystem.directory.files[idxDir].nodeIdx;
+    node = myFileSystem.nodes[idxNodeI];
+
+    if (node->fileType != NODE_LINK)
+        return -EINVAL;
+
+    if (readBlock(&myFileSystem, node->blocks[0], &block) == -1)
+        return -EIO;
+
+    strncpy(buf, block, bytes);
 
     return 0;
 }
@@ -644,6 +667,7 @@ struct fuse_operations myFS_operations = {
     .mknod		= my_mknod,						// Create a new file
     .unlink     = my_unlink,                    // Unlinks a file
     .read       = my_read,                      // Reads the contents of a file
-    .symlink    = my_symlink                    // Symlinks two files
+    .symlink    = my_symlink,                   // Symlinks two files
+    .readlink   = my_readlink                   // Reads symlink
 };
 

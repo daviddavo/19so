@@ -37,11 +37,12 @@ fi
 cp ./test/file1.txt $MPOINT
 cp ./test/random.bin $MPOINT
 
+echo "Testing symlinks"
 cd $MPOINT
 ln -s random.bin link
-cat link
-ls -lai
 cd ..
+
+diff -q ./test/random.bin $MPOINT/link || exit 1
 
 if [[ $automount = true ]]; then
     fusermount -u ./mount-point || { echo "Couldn't umount"; exit 1; }
