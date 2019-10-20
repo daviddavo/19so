@@ -319,7 +319,19 @@ int readBitmap(MyFileSystem *myFileSystem)
 
 int readDirectory(MyFileSystem* myFileSystem)
 {
-    return -1;
+    if(lseek(myFileSystem->fdVirtualDisk, BLOCK_SIZE_BYTES * DIRECTORY_IDX, SEEK_SET) == -1) {
+        perror("Failed lseek in readDirectory");
+        return -1;
+    }
+
+    if(read(myFileSystem->fdVirtualDisk, &(myFileSystem->directory), sizeof(DirectoryStruct)) == -1) {
+        perror("Failed read in readDirectory");
+        return -1;
+    }
+
+    sync();
+
+    return 0;
 }
 
 
@@ -342,14 +354,33 @@ int readSuperblock(MyFileSystem* myFileSystem)
 
 int readInodes(MyFileSystem* myFileSystem)
 {
+    NodeStruct node;
+    int i;
+
     if(lseek(myFileSystem->fdVirtualDisk, BLOCK_SIZE_BYTES * NODES_IDX, SEEK_SET) == -1) {
         perror("Failed lseek in readInodes");
         return -1;
     }
 
-    // No we're going to read each inode
+    // Now we're going to read each inode
+    for (i = 0; i < MAX_NODES; i++) {
+        if (readNode(myFileSystem, i, &node) == -1) {
+            perror("Failed reading node");
+            return -1;
+        }
 
-    return -1;
+        if (node.freeNode) {
+            myFileSystem->nodes[i] = NULL;
+        } else {
+            myFileSystem->numFreeNodes--;
+            myFileSystem->nodes[i] = malloc(sizeof(NodeStruct));
+            copyNode(myFileSystem->nodes[i], &node);
+        }
+    }
+
+    sync();
+
+    return 0;
 }
 
 int myMount(MyFileSystem *myFileSystem, char *backupFileName)
