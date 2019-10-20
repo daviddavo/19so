@@ -7,7 +7,7 @@
 
 MyFileSystem myFileSystem;
 
-#define USAGE			"Usage: %s -t diskSize -a backupFileName -f 'fuse options'\n"
+#define USAGE			"Usage: %s -t diskSize [-m] -a backupFileName -f 'fuse options'\n"
 #define EXAMPLE		"Example:\n%s -t 2097152 -a virtual-disk -f '-d -s mount-point'\n"
 #define EXAMPLE2 	"Example:\n%s -m -a <virtual-disk> -f '-d -s mount-point'\n"
 
