@@ -45,5 +45,5 @@ diff -q 'test/file1.txt' './test/file1.txt.mpoint' || exit 1;
 
 if [[ $automount = true ]]; then
     kill -s TERM -$fusepid
-    $! || cat fuserr.log
+    $! || { echo "Couldn't kill fuse"; cat fuserr.log; }
 fi
