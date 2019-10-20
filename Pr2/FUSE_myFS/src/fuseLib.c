@@ -137,7 +137,8 @@ void mode_string(mode_t mode, char *str)
  *
  * Help from FUSE:
  *
- * The 'st_dev' and 'st_blksize' fields are ignored. The 'st_ino' field is ignored except if the 'use_ino' mount option is given.
+ * The 'st_dev' and 'st_blksize' fields are ignored. The 'st_ino' field is
+ * ignored except if the 'use_ino' mount option is given.
  *
  *		struct stat {
  *			dev_t     st_dev;     // ID of device containing file
@@ -201,7 +202,8 @@ static int my_getattr(const char *path, struct stat *stbuf)
  * The filesystem may choose between two modes of operation:
  *
  * 1) The readdir implementation ignores the offset parameter, and passes zero to the filler function's offset.
- *    The filler function will not return '1' (unless an error happens), so the whole directory is read in a single readdir operation.
+ *    The filler function will not return '1' (unless an error happens), so the
+ *    whole directory is read in a single readdir operation.
  *
  * 2) The readdir implementation keeps track of the offsets of the directory entries.
  *    It uses the offset parameter and always passes non-zero offset to the filler function. When the buffer is full
@@ -257,18 +259,21 @@ static int my_readdir(const char *path, void *buf, fuse_fill_dir_t filler,  off_
  * Unless the 'default_permissions' mount option is given (limits access to the mounting user and root),
  * open should check if the operation is permitted for the given flags.
  *
- * Optionally open may also return an arbitrary filehandle in the fuse_file_info structure, which will be passed to all file operations.
+ * Optionally open may also return an arbitrary filehandle in the fuse_file_info
+ * structure, which will be passed to all file operations.
  *
  *	struct fuse_file_info{
  *		int				flags				Open flags. Available in open() and release()
  *		unsigned long 	fh_old				Old file handle, don't use
  *		int 			writepage			In case of a write operation indicates if this was caused by a writepage
  *		unsigned int 	direct_io: 1		Can be filled in by open, to use direct I/O on this file
- *		unsigned int 	keep_cache: 1		Can be filled in by open, to indicate, that cached file data need not be invalidated.
+ *		unsigned int 	keep_cache: 1		Can be filled in by open, to indicate,
+ *		                                    that cached file data need not be invalidated.
  *		unsigned int 	flush: 1			Indicates a flush operation.
  *		unsigned int 	nonseekable: 1		Can be filled in by open, to indicate that the file is not seekable.
  *		unsigned int 	padding: 27			Padding. Do not use
- *		uint64_t 		fh					File handle. May be filled in by filesystem in open(). Available in all other file operations
+ *		uint64_t 		fh					File handle. May be filled in by filesystem
+ *		                                    in open(). Available in all other file operations
  *		uint64_t 		lock_owner			Lock owner id.
  *		uint32_t 		poll_events			Requested poll events.
  *	}
@@ -294,6 +299,55 @@ static int my_open(const char *path, struct fuse_file_info *fi)
     return 0;
 }
 
+/**
+ * @brief Read data from an open file
+ *
+ * Help from FUSE:
+ *
+ * The requested action is to read up to size bytes of the file or directory,
+ * starting at offset. The bytes should be returned directly following the usual
+ * reply header
+ *
+ * We suppose buf is not a null pointer
+ *
+ * @param path path to the file
+ * @param buf buffer in which to return contents
+ * @param bytes bytes to read
+ * @param offset offset of file
+ * @param fuse_file_info FUSE structure associated to the file opened
+ * @return bytes read, distinct of bytes requested on error
+ **/
+static int my_read(const char* path, char *buf, size_t bytes, off_t offset,
+        struct fuse_file_info *ffi) {
+    char buffer[BLOCK_SIZE_BYTES];
+    size_t bytes2Read = bytes, totalRead = 0;
+
+    fprintf(stderr, "--->>my_read: path %s, bytes: %zu, offset: %jd, fh %"PRIu64"\n",
+            path, bytes, offset, ffi->fh);
+
+    while (bytes2Read) {
+        int i, b, ob;
+        b = myFileSystem.nodes[ffi->fh]->blocks[offset/BLOCK_SIZE_BYTES];
+        ob = offset % BLOCK_SIZE_BYTES;
+
+        if (readBlock(&myFileSystem, b, &buffer) == -1) {
+            fprintf(stderr, "Error reading block in my_read\n");
+            return -EIO;
+        }
+
+        for (i = ob; i < BLOCK_SIZE_BYTES && totalRead < bytes; ++i) {
+            buf[totalRead++] = buffer[i];
+        }
+
+        bytes2Read -= (i - ob);
+        offset += (i -ob);
+    }
+
+    sync();
+
+    return totalRead;
+}
+
 
 /**
  * @brief Write data on an opened file
@@ -315,7 +369,8 @@ static int my_write(const char *path, const char *buf, size_t size, off_t offset
     int bytes2Write = size, totalWrite = 0;
     NodeStruct *node = myFileSystem.nodes[fi->fh];
 
-    fprintf(stderr, "--->>>my_write: path %s, size %zu, offset %jd, fh %"PRIu64"\n", path, size, (intmax_t)offset, fi->fh);
+    fprintf(stderr, "--->>>my_write: path %s, size %zu, offset %jd, fh %"PRIu64"\n",
+            path, size, (intmax_t)offset, fi->fh);
 
     // Increase the file size if it is needed
     if(resizeNode(fi->fh, size + offset) < 0)
@@ -400,7 +455,8 @@ static int my_mknod(const char *path, mode_t mode, dev_t device)
     char modebuf[10];
 
     mode_string(mode, modebuf);
-    fprintf(stderr, "--->>>my_mknod: path %s, mode %s, major %d, minor %d\n", path, modebuf, (int)MAJOR(device), (int)MINOR(device));
+    fprintf(stderr, "--->>>my_mknod: path %s, mode %s, major %d, minor %d\n",
+            path, modebuf, (int)MAJOR(device), (int)MINOR(device));
 
     // We check that the length of the file name is correct
     if(strlen(path + 1) > myFileSystem.superBlock.maxLenFileName) {
@@ -482,7 +538,7 @@ static int my_unlink(const char *path)
     fprintf(stderr, "--->>>my_unlink: path %s\n", path);
 
     if ((idxDir = findFileByName(&myFileSystem, (char *)path + 1)) == -1) {
-        return -ENOENT;
+        return -EEXIST;
     }
 
     // Free used blocks
@@ -514,6 +570,7 @@ static int my_unlink(const char *path)
     return 0;
 }
 
+// https://libfuse.github.io/doxygen/structfuse__operations.html
 struct fuse_operations myFS_operations = {
     .getattr	= my_getattr,					// Obtain attributes from a file
     .readdir	= my_readdir,					// Read directory entries
@@ -523,5 +580,6 @@ struct fuse_operations myFS_operations = {
     .release	= my_release,					// Close an opened file
     .mknod		= my_mknod,						// Create a new file
     .unlink     = my_unlink,                    // Unlinks a file
+    .read       = my_read                       // Reads the contents of a file
 };
 
