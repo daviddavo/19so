@@ -40,8 +40,8 @@ test pr2:
         - apt-get update && apt-get --assume-yes install xxd file fuse
     script:
         - cd Pr2/FUSE_myFS
-        - ./test1.sh -m
+        - ./test1.sh -m || echo "Exited with error code $!"
         - ../my-fsck-static-64 virtual-disk
         - cat fuse.log
         - cat fuserr.log
-        - xxd virtual-disk | head
+        - xxd -l 16 virtual-disk
