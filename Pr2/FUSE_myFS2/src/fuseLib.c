@@ -183,7 +183,19 @@ static int my_getattr(const char *path, struct stat *stbuf)
     if((idxDir = findFileByName(&myFileSystem, (char *)path + 1)) != -1) {
         node = myFileSystem.nodes[myFileSystem.directory.files[idxDir].nodeIdx];
         stbuf->st_size = node->fileSize;
-        stbuf->st_mode = ((node->fileType == NODE_FILE)?S_IFREG:S_IFLNK) | 0644;
+        switch (node->fileType) {
+            case NODE_FILE:
+                stbuf->st_mode = S_IFREG | 0644;
+                break;
+            case NODE_LINK:
+                stbuf->st_mode = S_IFLNK | 0644;
+                break;
+            case NODE_DIR:
+                stbuf->st_mode = S_IFDIR | 0755;
+                break;
+            default:
+                return -ENOENT;
+        }
         stbuf->st_nlink = node->nlinks;
         stbuf->st_uid = getuid();
         stbuf->st_gid = getgid();
@@ -228,21 +240,28 @@ static int my_getattr(const char *path, struct stat *stbuf)
  **/
 static int my_readdir(const char *path, void *buf, fuse_fill_dir_t filler,  off_t offset, struct fuse_file_info *fi)
 {
-    int i;
+    int i, idxDir;
+    char root = strcmp(path, "/");
 
     fprintf(stderr, "--->>>my_readdir: path %s, offset %jd\n", path, (intmax_t)offset);
 
-    if(strcmp(path, "/") != 0)
+    if ((idxDir = findFileByName(&myFileSystem, path + 1)) == -1 && root != 0) {
         return -ENOENT;
+    }
+    
+    if (root != 0 && myFileSystem.nodes[myFileSystem.directory.files[idxDir].nodeIdx]->fileType != NODE_DIR)
+        return -ENOTDIR;
 
     filler(buf, ".", NULL, 0);
     filler(buf, "..", NULL, 0);
 
-    for(i = 0; i < MAX_FILES_PER_DIRECTORY; i++) {
-        if(!(myFileSystem.directory.files[i].freeFile)) {
-            if(filler(buf, myFileSystem.directory.files[i].fileName, NULL, 0) == 1)
-                return -ENOMEM;
-        }
+    if (root == 0) { 
+        for(i = 0; i < MAX_FILES_PER_DIRECTORY; i++) {
+            if(!(myFileSystem.directory.files[i].freeFile)) {
+                if(filler(buf, myFileSystem.directory.files[i].fileName, NULL, 0) == 1)
+                    return -ENOMEM;
+            }
+        } 
     }
 
     return 0;
@@ -293,6 +312,9 @@ static int my_open(const char *path, struct fuse_file_info *fi)
         return -ENOENT;
     }
 
+    if (myFileSystem.nodes[myFileSystem.directory.files[idxDir].nodeIdx]->fileType == NODE_DIR)
+        return -EISDIR;
+
     // Save the inode number in file handler to be used in the following calls
     fi->fh = myFileSystem.directory.files[idxDir].nodeIdx;
 
@@ -324,6 +346,9 @@ static int my_read(const char* path, char *buf, size_t bytes, off_t offset,
 
     fprintf(stderr, "--->>my_read: path %s, bytes: %zu, offset: %jd, fh %"PRIu64"\n",
             path, bytes, offset, ffi->fh);
+
+    if (myFileSystem.nodes[ffi->fh]->fileType == NODE_DIR)
+        return -EISDIR;
 
     while (bytes2Read) {
         int i, b, ob;
@@ -371,6 +396,9 @@ static int my_write(const char *path, const char *buf, size_t size, off_t offset
 
     fprintf(stderr, "--->>>my_write: path %s, size %zu, offset %jd, fh %"PRIu64"\n",
             path, size, (intmax_t)offset, fi->fh);
+
+    if (myFileSystem.nodes[fi->fh]->fileType == NODE_DIR)
+        return -EISDIR;
 
     // Increase the file size if it is needed
     if(resizeNode(fi->fh, size + offset) < 0)
@@ -525,6 +553,9 @@ static int my_truncate(const char *path, off_t size)
         return -ENOENT;
     }
 
+    if(myFileSystem.nodes[myFileSystem.directory.files[idxDir].nodeIdx]->fileType == NODE_DIR)
+        return -EISDIR;
+
     // Modify the size
     if(resizeNode(myFileSystem.directory.files[idxDir].nodeIdx, size) < 0)
         return -EIO;
@@ -543,6 +574,9 @@ static int my_unlink(const char *path)
     if ((idxDir = findFileByName(&myFileSystem, (char *)path + 1)) == -1) {
         return -EEXIST;
     }
+
+    if (myFileSystem.nodes[myFileSystem.directory.files[idxDir].nodeIdx]->fileType == NODE_DIR)
+        return -EISDIR;
 
     node = myFileSystem.nodes[myFileSystem.directory.files[idxDir].nodeIdx];
 
@@ -687,11 +721,64 @@ static int my_link(const char * path, const char * lpath) {
     }
 
     nodeIdx = myFileSystem.directory.files[idxDir].nodeIdx;
+
+    if (myFileSystem.nodes[nodeIdx]->fileType == NODE_DIR)
+        return -EISDIR;
+
     idxDir = findFreeFile(&myFileSystem);
     myFileSystem.directory.files[idxDir].freeFile = 0;
     myFileSystem.directory.files[idxDir].nodeIdx = nodeIdx;
     myFileSystem.nodes[nodeIdx]->nlinks++;
     strcpy(myFileSystem.directory.files[idxDir].fileName, lpath+1);
+
+    return 0;
+}
+
+// We will ignore the mode, as our filesystem doesn't support "real" directories
+static int my_mkdir(const char *pathname, mode_t mode) {
+    int idxDir, idxNodoI;
+
+    fprintf(stderr, "--->>>my_mkdir: path %s, mode: %o\n", pathname, mode);
+
+    if (strlen(pathname+1) > myFileSystem.superBlock.maxLenFileName) {
+        return -ENAMETOOLONG;
+    }
+
+    if (myFileSystem.numFreeNodes <= 0) {
+        return -ENOSPC;
+    }
+
+    if (myFileSystem.directory.numFiles >= MAX_FILES_PER_DIRECTORY) {
+        return -ENOSPC;
+    }
+
+    if (findFileByName(&myFileSystem, pathname+1) != -1) {
+        return -EEXIST;
+    }
+
+    if ((idxNodoI = findFreeNode(&myFileSystem)) == -1 || (idxDir = findFreeFile(&myFileSystem)) == -1) {
+        return -ENOSPC;
+    }
+
+    // Update root folder
+    myFileSystem.directory.files[idxDir].freeFile = false;
+    myFileSystem.directory.numFiles++;
+    strcpy(myFileSystem.directory.files[idxDir].fileName, pathname+1);
+    myFileSystem.directory.files[idxDir].nodeIdx = idxNodoI;
+
+    // Fill new inode
+    if(myFileSystem.nodes[idxNodoI] == NULL)
+        myFileSystem.nodes[idxNodoI] = malloc(sizeof(NodeStruct));
+
+    myFileSystem.nodes[idxNodoI]->fileSize = 0;
+    myFileSystem.nodes[idxNodoI]->numBlocks = 0;
+    myFileSystem.nodes[idxNodoI]->fileType = NODE_DIR;
+    myFileSystem.nodes[idxNodoI]->modificationTime = time(NULL);
+    myFileSystem.nodes[idxNodoI]->freeNode = false;
+    myFileSystem.nodes[idxNodoI]->nlinks = 2;
+
+    updateDirectory(&myFileSystem);
+    updateNode(&myFileSystem, idxNodoI, myFileSystem.nodes[idxNodoI]);
 
     return 0;
 }
@@ -709,6 +796,7 @@ struct fuse_operations myFS_operations = {
     .read       = my_read,                      // Reads the contents of a file
     .symlink    = my_symlink,                   // Symlinks two files
     .readlink   = my_readlink,                  // Reads symlink
-    .link       = my_link                       // Hardlinks a dir to inode
+    .link       = my_link,                      // Hardlinks a dir to inode
+    .mkdir      = my_mkdir                      // Creates an empty directory
 };
 
