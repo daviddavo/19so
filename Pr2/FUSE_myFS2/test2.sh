@@ -1,5 +1,5 @@
 #!/bin/bash
-MPOINT='./mount-point/'
+MPOINT='./mount-point'
 TIMEOUT=10
 
 automount=false
@@ -52,6 +52,12 @@ cd ..
 
 ls -laF $MPOINT
 diff -q ./test/random.bin $MPOINT/link || exit 1
+
+echo "Testing directories"
+mkdir $MPOINT/testdir
+cat $MPOINT/testdir
+ls -laF $MPOINT/testdir
+ls -laF $MPOINT
 
 if [[ $automount = true ]]; then
     fusermount -u ./mount-point || { echo "Couldn't umount"; exit 1; }
