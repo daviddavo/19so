@@ -20,6 +20,7 @@ mkdir test
 
 function wait_fuse {
     endseconds=$(($SECONDS+$TIMEOUT))
+
     while [[ $SECONDS -lt $endseconds ]] ; do
         grep -qs "$PWD/mount-point " /proc/mounts && return 0
         kill -0 $1 >/dev/null 2>&1 || { echo "fuse with pid $1 dieded"; return 1; }
