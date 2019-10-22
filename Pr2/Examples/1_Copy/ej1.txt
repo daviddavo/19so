@@ -1,5 +1,7 @@
-# David Cantador Piedras
-# David Davó Laviña
+# David Cantador Piedras 51120722W
+# David Davó Laviña 02581158Y
+# David Cantador Piedras 51120722W
+# David Davó Laviña 02581158Y
 usuarioso@ssoo:~/Descargas/Examples/1_Copy$ time ./copy coso.pdf coso_1024 1024
 Starting COPY
 Ends of COPY

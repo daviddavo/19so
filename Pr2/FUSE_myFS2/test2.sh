@@ -1,5 +1,5 @@
-# David Cantador Piedras
-# David Davó Laviña
+# David Cantador Piedras 51120722W
+# David Davó Laviña 02581158Y
 #!/bin/bash
 MPOINT='./mount-point'
 TIMEOUT=10

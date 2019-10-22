@@ -1,5 +1,7 @@
-# David Cantador Piedras
-# David Davó Laviña
+# David Cantador Piedras 51120722W
+# David Davó Laviña 02581158Y
+# David Cantador Piedras 51120722W
+# David Davó Laviña 02581158Y
 Results for the directory /home/r3his.
 Range		Total	Percentage
 [ 0,  10]	2699	82.261506%
