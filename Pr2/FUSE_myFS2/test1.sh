@@ -1,7 +1,7 @@
 #!/bin/bash
 
 MPOINT="./mount-point"
-TIMEOUT=10
+TIMEOUT=20
 
 automount=false
 while [ "$1" != "" ]; do
@@ -48,8 +48,14 @@ echo 'This is file 2' > $MPOINT/file2.txt
 ls $MPOINT -lai
 # read -p "Press enter..."
 
+echo "Creating file 3"
 head -c 8000 /dev/urandom > './test/random.bin'
 cp './test/random.bin' $MPOINT/
+
+echo "Truncating file 3"
+truncate -s 4096 $MPOINT/random.bin
+truncate -s 4096 './test/random.bin' || exit 1
+diff -q $MPOINT/random.bin './test/random.bin' || exit 1
 
 echo "Removing file 2"
 rm $MPOINT/file2.txt
