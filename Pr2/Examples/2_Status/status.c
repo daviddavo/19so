@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <time.h>
+#include <string.h>
 #include <pwd.h>
 #include <grp.h>
 
@@ -16,14 +17,16 @@ int main(int argc, char *argv[]) {
 	// See if the number of arguments in the command line is correct
 	if (argc < 2)
 		fprintf(stderr, "Usage: %s files...\n", argv[0]), exit(-1);
-    if(argv[1]!= "-L"){
-	for (i=2; i<argc; i++)
-		status(argv[i],'L');
+    if (strcmp(argv[1], "-L") == 0) {
+    	for (i=2; i<argc; i++) {
+	    	status(argv[i],'L');
+        }
+    } else {
+        for (i =1; i < argc; i++) {
+            status(argv[i],' ');
+        }
     }
-    else{
-    for (i =1; i < argc; i++)
-        status(argv[i],' ');
-    }
+
 	exit(0);
 }
 
