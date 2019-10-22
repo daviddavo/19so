@@ -1,3 +1,5 @@
+// David Cantador Piedras
+// David Davó Laviña
 #ifndef _FUSELIB_H_
 
 #define _FUSELIB_H_

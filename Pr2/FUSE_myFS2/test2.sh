@@ -1,3 +1,5 @@
+# David Cantador Piedras
+# David Davó Laviña
 #!/bin/bash
 MPOINT='./mount-point'
 TIMEOUT=10
