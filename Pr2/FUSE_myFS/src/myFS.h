@@ -1,5 +1,5 @@
-// David Cantador Piedras
-// David Davó Laviña
+// David Cantador Piedras ***REMOVED***W
+// David Davó Laviña ***REMOVED***
 #ifndef _MYFS_H_
 #define _MYFS_H_
 

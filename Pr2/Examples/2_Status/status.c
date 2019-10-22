@@ -1,5 +1,5 @@
-// David Cantador Piedras
-// David Davó Laviña
+// David Cantador Piedras ***REMOVED***W
+// David Davó Laviña ***REMOVED***
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>

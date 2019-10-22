@@ -1,5 +1,7 @@
-# David Cantador Piedras
-# David Davó Laviña
+# David Cantador Piedras ***REMOVED***W
+# David Davó Laviña ***REMOVED***
+# David Cantador Piedras ***REMOVED***W
+# David Davó Laviña ***REMOVED***
 Results for the directory /home/r3his.
 Range		Total	Percentage
 [ 0,  10]	2699	82.261506%

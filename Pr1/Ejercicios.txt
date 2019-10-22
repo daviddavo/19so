@@ -1,3 +1,5 @@
+# David Cantador Piedras ***REMOVED***W
+# David Davó Laviña ***REMOVED***
 Ejercicio 1: Analizar el código del programa show_file.c, que lee byte a byte
 	el contenido de un fichero, cuyo nombre se pasa como parámetro, y lo
 	muestra por pantalla usando funcioens de la biblioteca estándar de C.

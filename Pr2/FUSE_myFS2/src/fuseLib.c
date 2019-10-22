@@ -1,5 +1,5 @@
-// David Cantador Piedras
-// David Davó Laviña
+// David Cantador Piedras ***REMOVED***W
+// David Davó Laviña ***REMOVED***
 #include "fuseLib.h"
 
 #include <stdio.h>

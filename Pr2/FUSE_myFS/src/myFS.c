@@ -1,5 +1,5 @@
-// David Cantador Piedras
-// David Davó Laviña
+// David Cantador Piedras ***REMOVED***W
+// David Davó Laviña ***REMOVED***
 #include "myFS.h"
 #include <stdlib.h>
 #include <string.h>
