@@ -1,0 +1,1 @@
+find -iname "*.txt" -exec sh -c "mv {} {}.bak && echo -e '# David Cantador Piedras\n# David Davó Laviña' | cat - {}.bak > {}" \;

@@ -10,3 +10,4 @@ test/
 virtual-disk
 fuse.log
 fuserr.log
+*.bak
