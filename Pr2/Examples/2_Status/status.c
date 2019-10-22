@@ -8,7 +8,7 @@
 
 char permissions[] = {'x', 'w', 'r'};
 
-int status(char *);
+int status(char *,char);
 
 int main(int argc, char *argv[]) {
 	int i;
@@ -16,22 +16,29 @@ int main(int argc, char *argv[]) {
 	// See if the number of arguments in the command line is correct
 	if (argc < 2)
 		fprintf(stderr, "Usage: %s files...\n", argv[0]), exit(-1);
-
-	// Show the status of each file
-	for (i=1; i<argc; i++)
-		status(argv[i]);
-
+    if(argv[1]!= "-L"){
+	for (i=2; i<argc; i++)
+		status(argv[i],'L');
+    }
+    else{
+    for (i =1; i < argc; i++)
+        status(argv[i],' ');
+    }
 	exit(0);
 }
 
-int status(char *filename) {
+int status(char *filename, char opt) {
 	struct stat buf;
 	struct passwd *pw;
 	struct group *gr;
 	int i;
 
 	// Fills buf with the stat structure containing file attributes
-	if (stat(filename, &buf) == -1)
+    if(opt =='L'){//Opción -L para ver el inodo del enlace simbolico en vez del archivo enlazado
+        if(lstat(filename,&buf)==-1) //Lstat para ver la infomación del enlace simbolico.
+            perror(filename),exit(-1);
+    }
+    else if (stat(filename, &buf) == -1)
 		perror(filename), exit(-1);
 	printf("File: %s\n", filename);
 
