@@ -1,0 +1,22 @@
+usuarioso@ssoo:~/Descargas/Examples/1_Copy$ time ./copy coso.pdf coso_1024 1024
+Starting COPY
+Ends of COPY
+
+real	0m0,004s
+user	0m0,000s
+sys	0m0,003s
+usuarioso@ssoo:~/Descargas/Examples/1_Copy$ time ./copy coso.pdf coso_512 512
+Starting COPY
+Ends of COPY
+
+real	0m0,006s
+user	0m0,000s
+sys	0m0,005s
+usuarioso@ssoo:~/Descargas/Examples/1_Copy$ time ./copy coso.pdf coso_4096 4096
+Starting COPY
+Ends of COPY
+
+real	0m0,002s
+user	0m0,000s
+sys	0m0,002s
+
