@@ -1,3 +1,5 @@
+# David Cantador Piedras
+# David Davó Laviña
 Results for the directory /home/r3his.
 Range		Total	Percentage
 [ 0,  10]	2699	82.261506%

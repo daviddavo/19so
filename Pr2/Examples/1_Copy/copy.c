@@ -1,3 +1,5 @@
+// David Cantador Piedras
+// David Davó Laviña
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
