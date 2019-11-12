@@ -1,6 +1,6 @@
-# David Cantador Piedras ***REMOVED***W
-# David Davó Laviña ***REMOVED***
 #!/bin/bash
+# <NOMBREDAVO> <DNIDAVO>
+# <NOMBREREHIS> <DNIREHIS>
 
 MPOINT="./mount-point"
 TIMEOUT=20
