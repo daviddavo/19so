@@ -1,6 +1,6 @@
-# David Cantador Piedras 51120722W
-# David Davó Laviña 02581158Y
 #!/bin/bash
+# <NOMBREDAVO> <DNIDAVO>
+# <NOMBREREHIS> <DNIREHIS>
 
 MPOINT="./mount-point"
 TIMEOUT=20
