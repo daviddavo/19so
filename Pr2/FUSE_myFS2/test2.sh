@@ -1,5 +1,3 @@
-# David Cantador Piedras ***REMOVED***W
-# David Davó Laviña ***REMOVED***
 #!/bin/bash
 MPOINT='./mount-point'
 TIMEOUT=10
