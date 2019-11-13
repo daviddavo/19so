@@ -1,0 +1,57 @@
+<NOMBREDAVO> <DNIDAVO>
+<NOMBREREHIS> <DNIREHIS>
+
+## Ejercicio 1:
+--------------------
+-- ¿Cuantos procesos se crean? Dibuja el árbol de procesos generado
+--------------------
+
+Dentro del codigo de los procesos hijos no hay ningún exit, por lo que cada
+proceso generará (N-1) procesos (al completar el bucle) que crearán otros
+(N-2) procesos, y así...
+
+Se crearán N*(N+1)/2+1. Por lo que para N=3 se crearán 7 procesos
+El árbol de procesos será el siguiente:
+PADRE (Desde i = 0)
+    ╟ Hijo (i = 0)
+    ║   ╟ Hijo (i = 1)
+    ║   ║   ╙ Hijo (i = 2)
+    ║   ╙ Hijo (i = 2)
+    ╟ Hijo (i = 1)
+    ║   ╙ Hijo (i = 2)
+    ╙ Hijo (i = 2)
+
+------------------------------
+-- ¿Cuantos procesos hay como máximo simultaneamente activos?
+------------------------------
+Debido al wait(NULL), cada uno de los procesos espera a que sus
+hijos acaben, por lo que, en realidad sólo hay un proceso
+"haciendo cosas" cada vez.
+
+Como es espera activa, en realidad habrá un momento en el que
+estarán todos los procesos al mismo tiempo (8 contando el padre)
+
+------------------------------
+-- Durante la ejecición del código, ¿es posible que algún proceso
+-- quede en estado zombi? intenta visualizar esa situación usando
+-- la herramienta top e introduciendo llamadas a sleep()
+-- en el código donde consideres oportuno
+------------------------------
+
+------------------------------
+-- ¿Como cambia el comportamiento si la variable p_heap no se
+-- emplaza en el heap mediante una llamada a malloc() sino que
+-- se declara como una variable global de tipo int?
+------------------------------
+
+------------------------------
+-- ¿Como cambia el comprotamiento si la llamada a open la realiza
+-- cada proceso en lugar de una sola vez el proceso original?
+------------------------------
+
+------------------------------
+-- En el código original, ¿es posible que alguno de los procesos
+-- acabe siendo hijo del proceso init (PID = 1)? Intenta
+-- visualizar esa situación medainte top, modificando el código
+-- proporcionado si es preciso
+------------------------------

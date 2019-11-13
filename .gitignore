@@ -1,4 +1,6 @@
 *.o
+file.txt
+fork_example
 show_file
 testfile
 mytar
