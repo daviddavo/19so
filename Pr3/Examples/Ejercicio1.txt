@@ -37,6 +37,9 @@ estarán todos los procesos al mismo tiempo (8 contando el padre)
 -- la herramienta top e introduciendo llamadas a sleep()
 -- en el código donde consideres oportuno
 ------------------------------
+Si, los hijos se quedan zombies si han terminado pero su padre no es consciente
+de ello. Una forma de que se queden zombies es poniendo un sleep muy largo
+en la función de los padres.
 
 ------------------------------
 -- ¿Como cambia el comportamiento si la variable p_heap no se
