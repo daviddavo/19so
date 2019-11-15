@@ -46,11 +46,16 @@ en la función de los padres.
 -- emplaza en el heap mediante una llamada a malloc() sino que
 -- se declara como una variable global de tipo int?
 ------------------------------
+Ni la pila ni el heap son compartidos entre procesos, por lo que el comportamiento
+no cambia.
 
 ------------------------------
 -- ¿Como cambia el comprotamiento si la llamada a open la realiza
 -- cada proceso en lugar de una sola vez el proceso original?
 ------------------------------
+Al abrir el fichero, se escribe en el principio, por lo que sólo se verá 
+reflejado lo que haya escrito el último hijo (y su padre que le estará esperando,
+y el padre de su padre).
 
 ------------------------------
 -- En el código original, ¿es posible que alguno de los procesos
@@ -58,3 +63,5 @@ en la función de los padres.
 -- visualizar esa situación medainte top, modificando el código
 -- proporcionado si es preciso
 ------------------------------
+Sí, si el padre muere el proceso init acepta los hijos, por lo que para verlo
+en top sólo sería necesario poner exit(0) en el else
