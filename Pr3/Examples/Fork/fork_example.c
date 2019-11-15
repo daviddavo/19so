@@ -7,7 +7,7 @@
 #include <string.h>
 
 #define N 3
-
+#define EXERCISE_OPEN
 
 int a_global=0;
 char tab[2*N]="\0";
