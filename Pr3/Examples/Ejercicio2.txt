@@ -1,0 +1,33 @@
+<NOMBREREHIS> <DNIREHIS>
+<NOMBREDAVO> <DNIDAVO>
+
+------------------------------
+-- El código partial_sum1.c lanza dos hilos encargados de colaborar en el cálculo
+-- del sumatorio \sum_1^{10000} n
+-- Después de ejecutarlo varias veces observamos que no siempre ofrece el resultado
+-- correcto, ¿Por qué? En caso de no ser así, utiliza el ejemplo codificado en
+-- partial_sum2.c y observa que nunca tenemos el resultado correcto ¿Por qué?
+------------------------------
+El algoritmo de scheduling que usa el SO es expropiativo, por lo que para la
+operación en mitad de la "sección crítica" del programa. Por lo que, entre que lee,
+suma y escribe, el otro recurso ya ha escrito, por lo que estamos escribiendo un
+recurso desactualizado. Esto se puede ver más claro si lo hacemos paso a paso, y
+ejecutando una operación yield (dar el paso a otro thread) en medio.
+
+Para solucionarlo sería necesario usar algún mecanismo de sincronización (mutex,
+semáforos, etc).
+
+Ejemplo:
+Hilo 1 lee 
+
+Ejemplo:
+Hilo 1 lee total_sum=150
+---------
+Hilo 2 lee total_sum=150
+Hilo 2 suma total_sum+5001
+Hilo 2 escribe total_sum=5151
+---------
+Hilo 1 suma total_sum+50
+Hilo 1 escribe total_sum=200
+
+Se ha ignorado lo que ha hecho el hilo 2

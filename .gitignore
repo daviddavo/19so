@@ -13,3 +13,5 @@ virtual-disk
 fuse.log
 fuserr.log
 *.bak
+partial_sum1
+partial_sum2
