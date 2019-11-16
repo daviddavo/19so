@@ -8,7 +8,6 @@
 pthread_t philosophers[NR_PHILOSOPHERS];
 pthread_mutex_t forks[NR_PHILOSOPHERS];
 
-
 void init()
 {
     int i;
@@ -48,13 +47,22 @@ void* philosopher(void* i)
         
         think(nPhilosopher);
         
-        /// TRY TO GRAB BOTH FORKS (right and left)
+        // Esperamos a coger uno
+        pthread_mutex_lock(&forks[left]);
 
-        eat(nPhilosopher);
+        if (pthread_mutex_trylock(&forks[right])) {          
+            // No hemos conseguido coger el otro tenedor, pues dejamos
+            // el que tenemos
+            pthread_mutex_unlock(&forks[left]);
+            printf("Philosopher %d giving up fork\n", nPhilosopher);
+        } else {
+            eat(nPhilosopher);
         
-        // PUT FORKS BACK ON THE TABLE
-        
-        toSleep(nPhilosopher);
+            // PUT FORKS BACK ON THE TABLE
+            pthread_mutex_unlock(&forks[right]);
+            pthread_mutex_unlock(&forks[left]);
+            toSleep(nPhilosopher);
+        }
    }
 
 }
