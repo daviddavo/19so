@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <sys/types.h>
 
 #define N_PARADAS 5
 #define EN_RUTA 0
@@ -27,8 +28,8 @@ int esperando_bajar[N_PARADAS];
 pthread_mutex_t meverything;
 
 /* Variables condicionales */
+pthread_cond_t cpuede_arrancar;
 pthread_cond_t cpueden_subir;
-pthread_cond_t cpueden_bajar;
 pthread_cond_t cenparada;
 
 void Autobus_En_Parada() {
@@ -36,14 +37,16 @@ void Autobus_En_Parada() {
      * quieran bajar y/o subir la parada actual. Después se pone en marcha */
     pthread_mutex_lock(&meverything);
     estado = EN_PARADA;
-
     printf("o Parada % 2d, S% 2d/B% 2d\n", parada_actual, esperando_parada[parada_actual], esperando_bajar[parada_actual]);
-    while (esperando_parada[parada_actual] > 0) {
-        pthread_cond_broadcast(&cenparada);
-        printf("Mandada señal\n");
-        pthread_mutex_unlock(&meverything);
-        // pthread_cond_wait(&cpueden_subir, &meverything);
-        pthread_mutex_lock(&meverything);
+
+    // Que se suban los que se tengan que subir y se bajen los que se tengan que bajar
+    pthread_cond_broadcast(&cenparada);
+    pthread_mutex_unlock(&meverything);
+
+    // WAIT UNTIL EVERYONE IS ON THE BUS
+    pthread_mutex_lock(&meverything);
+    while (esperando_parada[parada_actual] > 0 || esperando_bajar[parada_actual] > 0) {
+        pthread_cond_wait(&cpuede_arrancar, &meverything);
     }
 
     pthread_mutex_unlock(&meverything);
@@ -55,7 +58,7 @@ void Conducir_Hasta_Siguiente_Parada() {
 
     pthread_mutex_lock(&meverything);
     estado = EN_RUTA;
-    printf("En ruta %d/%d\n", n_ocupantes, MAX_USUARIOS);
+    printf("> En ruta %d/%d\n", n_ocupantes, MAX_USUARIOS);
     pthread_mutex_unlock(&meverything);
 
     sleep(random()%(MAX_SLEEP_RUTA-MIN_SLEEP_RUTA)+MIN_SLEEP_RUTA);
@@ -75,17 +78,16 @@ void Subir_Autobus(int id_usuario, int origen) {
     esperando_parada[origen]++;
     printf("Usuario %d esperando para subir en %d\n", id_usuario, origen);
 
-    while (estado != EN_RUTA || parada_actual != origen) {
+    while (!(estado == EN_PARADA && parada_actual == origen)) {
         pthread_cond_wait(&cenparada, &meverything);
     }
 
     printf("Usuario %d subiendo al bus\n", id_usuario);
-    fflush(stdout);
     
     n_ocupantes++;
     esperando_parada[origen]--;
     if (esperando_parada[origen] == 0) {
-        pthread_cond_signal(&cpueden_bajar);
+        pthread_cond_signal(&cpuede_arrancar);
     }
 
     pthread_mutex_unlock(&meverything);
@@ -95,6 +97,22 @@ void Bajar_Autobus(int id_usuario, int destino) {
     /* El usuario indicará que quiere bajar en la parada 'destino', esperará
      * a que el autobús se pare en dicha parada y bajará. El id_usuario puede
      * utilizarse para proporcionar infomación de depuración */
+    pthread_mutex_lock(&meverything);
+    esperando_bajar[destino]++;
+    printf("Usuario %d esperando para bajarse en %d\n", id_usuario, destino);
+
+    while(!(estado == EN_PARADA && parada_actual == destino)) {
+        pthread_cond_wait(&cenparada, &meverything);
+    }
+
+    printf("Usuario %d bajando del bus\n", id_usuario);
+    n_ocupantes--;
+    esperando_bajar[destino]--;
+    if (esperando_bajar[destino] == 0) {
+        pthread_cond_signal(&cpuede_arrancar);
+    }
+
+    pthread_mutex_unlock(&meverything);
 }
 
 void * thread_autobus(void * args) {
@@ -117,14 +135,16 @@ void Usuario(int id_usuario, int origen, int destino) {
 void * thread_usuario(void * arg) {
     int id_usuario = -1, a, b;
     // Obtener id de usuario
+    id_usuario = pthread_self();
 
-    while (1 /*condicion*/) {
+    while (1) {
         a = rand() % N_PARADAS;
         do {
             b = rand() % N_PARADAS;
         } while (a == b);
 
         Usuario(id_usuario, a, b);
+        sleep(1+random()%USUARIOS);
     }
 }
 
@@ -148,7 +168,7 @@ int main(int argc, char* argv[])
     // Iniciamos las variables condicionales
     pthread_cond_init(&cenparada, NULL); 
     pthread_cond_init(&cpueden_subir, NULL);
-    pthread_cond_init(&cpueden_bajar, NULL);
+    pthread_cond_init(&cpuede_arrancar, NULL);
 
     tusuarios = malloc(sizeof(pthread_t) * nUsuarios);
     for (i = 0; i < nUsuarios; ++i) {
@@ -162,15 +182,18 @@ int main(int argc, char* argv[])
     };
 
     // Esperar terminación de los hilos
+    // El bus parará cuando no haya más usuarios
     pthread_join(tbus, NULL);
+
+    free(tusuarios);
     
     // Destruimos los mutex
     pthread_mutex_destroy(&meverything);
 
     // Destruimos las variables condicionales
     pthread_cond_destroy(&cenparada);
+    pthread_cond_destroy(&cpuede_arrancar);
     pthread_cond_destroy(&cpueden_subir);
-    pthread_cond_destroy(&cpueden_bajar);
 
 	return 0;
 }
