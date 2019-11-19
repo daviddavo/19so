@@ -1,5 +1,6 @@
-<NOMBREDAVO> <DNIDAVO>
-<NOMBREREHIS> <DNIREHIS>
+// David Cantador Piedras 51120722W
+// David Davó Laviña 02581158Y
+
 
 ## Ejercicio 1:
 --------------------

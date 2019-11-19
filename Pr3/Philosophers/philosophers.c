@@ -1,3 +1,6 @@
+// David Cantador Piedras 51120722W
+// David Davó Laviña 02581158Y
+
 #include <stdio.h> 
 #include <pthread.h>
 #include <stdlib.h>

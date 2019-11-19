@@ -1,5 +1,6 @@
-<NOMBREREHIS> <DNIREHIS>
-<NOMBREDAVO> <DNIDAVO>
+// David Cantador Piedras 51120722W
+// David Davó Laviña 02581158Y
+
 
 ------------------------------
 -- El código partial_sum1.c lanza dos hilos encargados de colaborar en el cálculo
