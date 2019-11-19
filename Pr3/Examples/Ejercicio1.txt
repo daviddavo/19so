@@ -1,5 +1,6 @@
-<NOMBREDAVO> <DNIDAVO>
-<NOMBREREHIS> <DNIREHIS>
+// David Cantador Piedras ***REMOVED***W
+// David Davó Laviña ***REMOVED***
+
 
 ## Ejercicio 1:
 --------------------
