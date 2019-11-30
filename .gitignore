@@ -19,9 +19,11 @@ my_system
 philosophers
 philosophers
 simulator
-.hello.*
 .tmp_versions/
 *.ko
 *.mod.c
+*.ko.cmd
+*.mod.o.cmd
+*.o.cmd
 modules.order
 *.symvers
