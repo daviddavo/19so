@@ -137,7 +137,7 @@ static ssize_t device_write(struct file * filp, const char * buffer, size_t leng
     unsigned int ledmask = 0;
     int i;
     
-    kbuf = kvcalloc(sizeof(char), length, GFP_KERNEL);
+    kbuf = kvmalloc(sizeof(char) * length, GFP_KERNEL);
 
     if(copy_from_user(kbuf, buffer, length)) {
         return -EINVAL;
@@ -146,7 +146,7 @@ static ssize_t device_write(struct file * filp, const char * buffer, size_t leng
 
     printk(KERN_DEBUG "Received %s\n", kbuf);
 
-    for (i = 0; i < length-1; i++) {
+    for (i = 0; i < length && kbuf[i] != '\0'; i++) {
         if ('1' <= kbuf[i] && kbuf[i] <= '3') {
             // El %3 es necesario porque por alguna extraña razón que nunca
             // llegaremos a comprender, el que se habilita con el 3, no es el
