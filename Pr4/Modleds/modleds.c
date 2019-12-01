@@ -23,7 +23,6 @@ static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
 
 struct tty_driver* kbd_driver= NULL;
 static int Device_Open = 0;
-static int major;
 static dev_t start;
 struct cdev * chardev; 
 static char output[BUF_LEN];
@@ -61,6 +60,7 @@ static inline int set_leds(struct tty_driver* handler, unsigned int mask)
 static int __init modleds_init(void)
 {
     int minor;		/* Minor number assigned to the associated character device */
+    int major;
     int ret;
     printk(KERN_DEBUG "In modleds_init()");
 
@@ -89,16 +89,19 @@ static int __init modleds_init(void)
     major=MAJOR(start);
     minor=MINOR(start);
 
+    kbd_driver= get_kbd_driver_handler();
+    set_leds(kbd_driver,ALL_LEDS_ON);
+
     return SUCCESS;
 }
 
 static void __exit modleds_exit(void)
 {
+    printk(KERN_DEBUG "In modleds_exit()");
     set_leds(kbd_driver,ALL_LEDS_OFF);
     if(chardev)
         cdev_del(chardev);
-    unregister_chrdev(major, DEVICE_NAME);
-    unregister_chrdev_region(major, 1);
+    unregister_chrdev_region(start, 1);
 }
 
 static int device_open(struct inode * inode, struct file * file) {
