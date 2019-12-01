@@ -27,3 +27,5 @@ simulator
 *.o.cmd
 modules.order
 *.symvers
+*.mod.cmd
+*.mod
