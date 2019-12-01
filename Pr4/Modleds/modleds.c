@@ -18,7 +18,7 @@ static ssize_t device_read(struct file *, char *, size_t, loff_t *);
 static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
 
 #define SUCCESS 0
-#define DEVICE_NAME "chardev"
+#define DEVICE_NAME "modleds"
 #define BUF_LEN 5
 
 struct tty_driver* kbd_driver= NULL;
@@ -50,6 +50,7 @@ struct tty_driver* get_kbd_driver_handler(void)
 /* Set led state to that specified by mask */
 static inline int set_leds(struct tty_driver* handler, unsigned int mask)
 {
+    printk(KERN_DEBUG "Setting leds mask %u\n", mask);
 #if ( LINUX_VERSION_CODE > KERNEL_VERSION(2,6,32) )
     return (handler->ops->ioctl) (vc_cons[fg_console].d->port.tty, KDSETLED,mask);
 #else
@@ -88,6 +89,8 @@ static int __init modleds_init(void)
 
     major=MAJOR(start);
     minor=MINOR(start);
+
+    printk(KERN_INFO "modleds: Major: %d, minor: %d\n", major, minor);
 
     kbd_driver= get_kbd_driver_handler();
     set_leds(kbd_driver,ALL_LEDS_ON);
@@ -133,22 +136,29 @@ static ssize_t device_write(struct file * filp, const char * buffer, size_t leng
     char * kbuf;
     unsigned int ledmask = 0;
     int i;
-
-    kbuf = kvmalloc(sizeof(char) * (length+1), GFP_KERNEL);
+    
+    kbuf = kvcalloc(sizeof(char), length, GFP_KERNEL);
 
     if(copy_from_user(kbuf, buffer, length)) {
         return -EINVAL;
     }
+    kbuf[length-1] = '\0';
 
-    for (i = 0; i < length; i++) {
-        if ('1' <= kbuf[i] && kbuf[i] <= 3) {
-            ledmask = ledmask | 0b1 << (kbuf[i]-'0');
+    printk(KERN_DEBUG "Received %s\n", kbuf);
+
+    for (i = 0; i < length-1; i++) {
+        if ('1' <= kbuf[i] && kbuf[i] <= '3') {
+            // El %3 es necesario porque por alguna extraña razón que nunca
+            // llegaremos a comprender, el que se habilita con el 3, no es el
+            // tercer bit más significativo, si no el 0
+            ledmask = ledmask | (0b1 << ((kbuf[i]-'0')%3));
         }
     }
 
     set_leds(kbd_driver, ledmask);
+    kvfree(kbuf);
 
-    return SUCCESS;
+    return length;
 }
 
 module_init(modleds_init);
