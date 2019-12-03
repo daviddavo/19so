@@ -129,9 +129,10 @@ int seq_battery(int argc, char * argv[]) {
     char capacityStr[4];
     char mask[4];
     int capacity;
+    int blink = 0;
 
-    if ((bat = fopen("/sys/class/power_supply/BAT0/capacity", "r")) == NULL) {
-    // if ((bat = fopen("capacityjeje", "r")) == NULL) {
+    // if ((bat = fopen("/sys/class/power_supply/BAT0/capacity", "r")) == NULL) {
+    if ((bat = fopen("capacity", "r")) == NULL) {
         fprintf(stderr, "Error 404: Battery not found\n");
         return EXIT_FAILURE;
     }
@@ -145,15 +146,18 @@ int seq_battery(int argc, char * argv[]) {
     while (1 /* not CTRL-C */) {
         fread(&capacityStr, sizeof(char), 4, bat);
         capacity = atoi(capacityStr);
+        printf("Capacity: %3d, c/8: %2d\r", capacity, (capacity-1)*8/100);
+        fflush(stdout);
         if (capacity < 13) {
             /* Parpadeo */
+            numToMask((blink >= 1)?7:0, mask);
+            if (blink++ >= 2) blink = 0;
         } else {
-            printf("Capacity: %3d, c/8: %2d\r", capacity, (capacity-1)*8/100);
-            fflush(stdout);
             numToMask((capacity-1)*8/100, mask);
-            fwrite(&mask, sizeof(char), 4, modleds);
-            fflush(modleds);
         }
+
+        fwrite(&mask, sizeof(char), 4, modleds);
+        fflush(modleds);
 
         rewind(bat);
         fflush(bat);
