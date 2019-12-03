@@ -7,6 +7,7 @@
 #include <time.h>
 
 #define MORSE_UNIT 100
+#define CPU_DIFF 1000
 char * ALL_0 = "\0";
 char * ALL_1 = "123\0";
 static int running = 1;
@@ -106,7 +107,7 @@ int seq_morse(int argc, char * argv[]) {
     return 0;
 }
 
-int numToMask(int num, char * mask) {
+int numToBinMask(int num, char * mask) {
     int i;
 
     if (num > 15 || num < 0) {
@@ -148,7 +149,7 @@ int seq_battery(int argc, char * argv[]) {
         return EXIT_FAILURE;
     }
 
-    printf("Displaying battery level\n");
+    printf("Displaying battery level in binary little endian\n");
     signal(SIGINT, intHandler);
     running = 1;
     while (running) {
@@ -158,10 +159,10 @@ int seq_battery(int argc, char * argv[]) {
         fflush(stdout);
         if (capacity < 13) {
             /* Parpadeo */
-            numToMask((blink >= 1)?7:0, mask);
+            numToBinMask((blink >= 1)?7:0, mask);
             if (blink++ >= 2) blink = 0;
         } else {
-            numToMask((capacity-1)*8/100, mask);
+            numToBinMask((capacity-1)*8/100, mask);
         }
 
         fwrite(&mask, sizeof(char), 4, modleds);
@@ -179,6 +180,78 @@ int seq_battery(int argc, char * argv[]) {
     return EXIT_SUCCESS;
 }
 
+int numToPctMask(int num, char * mask) {
+    if (num < 0 || num > 4)
+        return EXIT_FAILURE;
+    for (int i = 0; i < 3; ++i)
+        mask[i] = ' ';
+
+    if (num >= 1) mask[0] = '1';
+    if (num >= 2) mask[1] = '2';
+    if (num >= 3) mask[2] = '3';
+
+    mask[3] = '\0';
+
+    return EXIT_SUCCESS;
+}
+
+int pctToNum(float num) {
+    if (num > 85) return 3;
+    if (num > 50) return 2;
+    if (num > 10) return 1;
+    return 0;
+}
+
+int seq_cpu(int argc, char * argv[]) {
+    FILE * modleds;
+    FILE * uptime;
+    char mask[4];
+    int ncores = 8; /* TODO: Get number of codes */
+    float lastidle = 0;
+    float using = 0, idle = 0;
+    float pct;
+    
+    if ((uptime = fopen("/proc/uptime", "r")) == NULL) {
+        fprintf(stderr, "Can't open /proc/uptime\n");
+        return EXIT_FAILURE;
+    }
+
+    if ((modleds = fopen("/dev/modleds", "w")) == NULL) {
+        fprintf(stderr, "Can't open device /dev/modleds");
+        return EXIT_FAILURE;
+    }
+
+    printf("Displaying cpu usage as number of leds lighted up\n");
+    signal(SIGINT, intHandler);
+    running = 1;
+
+    fscanf(uptime, "%f %f\n", &using, &idle);
+    msleep(CPU_DIFF);
+    while (running) {
+        lastidle = idle;
+
+        fscanf(uptime, "%f %f\n", &using, &idle);
+        fflush(uptime);
+        rewind(uptime);
+
+        pct = 100 - (idle-lastidle)/ncores*100;
+        printf("CPU Usage: %3.0f%% (%2d)\r", pct, pctToNum(pct));
+        fflush(stdout);
+
+        numToPctMask(pctToNum(pct), mask);
+        fwrite(&mask, sizeof(char), 4, modleds);
+        fflush(modleds);
+
+        msleep(CPU_DIFF);
+    }
+    printf("\n");
+
+    fclose(modleds);
+    fclose(uptime);
+
+    return EXIT_SUCCESS;
+}
+
 int main(int argc, char * argv[]) {
     int seq = -1;
 
@@ -192,10 +265,12 @@ int main(int argc, char * argv[]) {
     switch (seq) {
         case 0: return seq_morse(argc, argv);
         case 1: return seq_battery(argc, argv);
+        case 2: return seq_cpu(argc, argv);
         default:
             fprintf(stderr, "Available sequences are:\n");
             fprintf(stderr, "0 [msg] - Message in morse code\n");
             fprintf(stderr, "1 - Display battery level\n");
+            fprintf(stderr, "2 - Display CPU usage\n");
             exit(EXIT_FAILURE);
     }
 
