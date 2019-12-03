@@ -1,3 +1,6 @@
+// David Cantador Piedras ***REMOVED***W
+// David Davó Laviña ***REMOVED***
+
 /*
  *  chardev.c: Creates a read-only char device that says how many times
  *  you've read from the dev file
