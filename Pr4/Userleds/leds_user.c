@@ -7,7 +7,8 @@
 #include <time.h>
 
 #define MORSE_UNIT 100
-#define CPU_DIFF 1000
+#define CPU_DIFF 500
+#define N_CORES 8
 char * ALL_0 = "\0";
 char * ALL_1 = "123\0";
 static int running = 1;
@@ -206,8 +207,8 @@ int seq_cpu(int argc, char * argv[]) {
     FILE * modleds;
     FILE * uptime;
     char mask[4];
-    int ncores = 8; /* TODO: Get number of codes */
-    float lastidle = 0;
+    int ncores = N_CORES; /* TODO: Get number of codes */
+    float lastusing, lastidle = 0;
     float using = 0, idle = 0;
     float pct;
     
@@ -229,13 +230,14 @@ int seq_cpu(int argc, char * argv[]) {
     msleep(CPU_DIFF);
     while (running) {
         lastidle = idle;
+        lastusing = using;
 
         fscanf(uptime, "%f %f\n", &using, &idle);
         fflush(uptime);
         rewind(uptime);
 
-        pct = 100 - (idle-lastidle)/ncores*100;
-        printf("CPU Usage: %3.0f%% (%2d)\r", pct, pctToNum(pct));
+        pct = 100 - 100*(idle-lastidle)/(using-lastusing)/ncores;
+        printf("CPU Usage: %4.0f%% (%2d)\r", pct, pctToNum(pct));
         fflush(stdout);
 
         numToPctMask(pctToNum(pct), mask);
