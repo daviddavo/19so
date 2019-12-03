@@ -3,11 +3,13 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <signal.h> 
 #include <time.h>
 
 #define MORSE_UNIT 100
 char * ALL_0 = "\0";
 char * ALL_1 = "123\0";
+static int running = 1;
 char MORSE_TABLE[][6] = {
     ".-",       // A
     "-...",     // B
@@ -123,6 +125,10 @@ int numToMask(int num, char * mask) {
     return 0;
 }
 
+void intHandler(int signum) {
+    running = 0;
+}
+
 int seq_battery(int argc, char * argv[]) {
     FILE * bat;
     FILE * modleds;
@@ -131,8 +137,8 @@ int seq_battery(int argc, char * argv[]) {
     int capacity;
     int blink = 0;
 
-    // if ((bat = fopen("/sys/class/power_supply/BAT0/capacity", "r")) == NULL) {
-    if ((bat = fopen("capacity", "r")) == NULL) {
+    if ((bat = fopen("/sys/class/power_supply/BAT0/capacity", "r")) == NULL) {
+    // if ((bat = fopen("capacity", "r")) == NULL) {
         fprintf(stderr, "Error 404: Battery not found\n");
         return EXIT_FAILURE;
     }
@@ -143,7 +149,9 @@ int seq_battery(int argc, char * argv[]) {
     }
 
     printf("Displaying battery level\n");
-    while (1 /* not CTRL-C */) {
+    signal(SIGINT, intHandler);
+    running = 1;
+    while (running) {
         fread(&capacityStr, sizeof(char), 4, bat);
         capacity = atoi(capacityStr);
         printf("Capacity: %3d, c/8: %2d\r", capacity, (capacity-1)*8/100);
@@ -163,9 +171,12 @@ int seq_battery(int argc, char * argv[]) {
         fflush(bat);
         msleep(500);
     }
+    printf("\n");
 
     fclose(modleds);
     fclose(bat);
+
+    return EXIT_SUCCESS;
 }
 
 int main(int argc, char * argv[]) {
