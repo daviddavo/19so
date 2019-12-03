@@ -1,3 +1,6 @@
+// David Cantador Piedras 51120722W
+// David Davó Laviña 02581158Y
+
 /*
  *  chardev.c: Creates a read-only char device that says how many times
  *  you've read from the dev file
