@@ -5,7 +5,7 @@
 #include <string.h>
 #include <time.h>
 
-#define MORSE_UNIT 200
+#define MORSE_UNIT 100
 char * ALL_0 = "\0";
 char * ALL_1 = "123\0";
 char MORSE_TABLE[][6] = {
@@ -104,6 +104,66 @@ int seq_morse(int argc, char * argv[]) {
     return 0;
 }
 
+int numToMask(int num, char * mask) {
+    int i;
+
+    if (num > 15 || num < 0) {
+        return -1;
+    }
+
+    for (i = 0; i < 3; ++i) {
+        if (num & (0b1 << i)) {
+            mask[i] = i + '0' + 1;
+        } else {
+            mask[i] = ' ';
+        }
+    }
+    mask[3] = '\0';
+
+    return 0;
+}
+
+int seq_battery(int argc, char * argv[]) {
+    FILE * bat;
+    FILE * modleds;
+    char capacityStr[4];
+    char mask[4];
+    int capacity;
+
+    if ((bat = fopen("/sys/class/power_supply/BAT0/capacity", "r")) == NULL) {
+    // if ((bat = fopen("capacityjeje", "r")) == NULL) {
+        fprintf(stderr, "Error 404: Battery not found\n");
+        return EXIT_FAILURE;
+    }
+
+    if ((modleds = fopen("/dev/modleds", "w")) == NULL) {
+        fprintf(stderr, "Can't open device /dev/modleds");
+        return EXIT_FAILURE;
+    }
+
+    printf("Displaying battery level\n");
+    while (1 /* not CTRL-C */) {
+        fread(&capacityStr, sizeof(char), 4, bat);
+        capacity = atoi(capacityStr);
+        if (capacity < 13) {
+            /* Parpadeo */
+        } else {
+            printf("Capacity: %3d, c/8: %2d\r", capacity, (capacity-1)*8/100);
+            fflush(stdout);
+            numToMask((capacity-1)*8/100, mask);
+            fwrite(&mask, sizeof(char), 4, modleds);
+            fflush(modleds);
+        }
+
+        rewind(bat);
+        fflush(bat);
+        msleep(500);
+    }
+
+    fclose(modleds);
+    fclose(bat);
+}
+
 int main(int argc, char * argv[]) {
     int seq = -1;
 
@@ -116,9 +176,11 @@ int main(int argc, char * argv[]) {
 
     switch (seq) {
         case 0: return seq_morse(argc, argv);
+        case 1: return seq_battery(argc, argv);
         default:
             fprintf(stderr, "Available sequences are:\n");
             fprintf(stderr, "0 [msg] - Message in morse code\n");
+            fprintf(stderr, "1 - Display battery level\n");
             exit(EXIT_FAILURE);
     }
 
