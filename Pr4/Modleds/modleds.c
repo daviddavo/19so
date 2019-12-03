@@ -1,3 +1,6 @@
+// David Cantador Piedras ***REMOVED***
+// David Davó Laviña ***REMOVED***
+
 #include <linux/module.h>
 #include <asm-generic/errno.h>
 #include <linux/init.h>

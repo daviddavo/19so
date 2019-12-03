@@ -1,3 +1,6 @@
+// David Cantador Piedras ***REMOVED***
+// David Davó Laviña ***REMOVED***
+
 /*
  *  hello.c - The simplest kernel module.
  */

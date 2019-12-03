@@ -1,6 +1,6 @@
-# David Cantador Piedras ***REMOVED***W
+# David Cantador Piedras ***REMOVED***
 # David Davó Laviña ***REMOVED***
-# David Cantador Piedras ***REMOVED***W
+# David Cantador Piedras ***REMOVED***
 # David Davó Laviña ***REMOVED***
 usuarioso@ssoo:~/Descargas/Examples/1_Copy$ time ./copy coso.pdf coso_1024 1024
 Starting COPY

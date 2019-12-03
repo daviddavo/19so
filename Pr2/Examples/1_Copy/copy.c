@@ -1,4 +1,4 @@
-// David Cantador Piedras ***REMOVED***W
+// David Cantador Piedras ***REMOVED***
 // David Davó Laviña ***REMOVED***
 #include <stdio.h>
 #include <fcntl.h>
