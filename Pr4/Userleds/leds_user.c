@@ -207,7 +207,7 @@ int seq_cpu(int argc, char * argv[]) {
     FILE * modleds;
     FILE * uptime;
     char mask[4];
-    int ncores = N_CORES; /* TODO: Get number of codes */
+    int ncores = sysconf(_SC_NPROCESSORS_ONLN); /* TODO: Get number of codes */
     float lastusing, lastidle = 0;
     float using = 0, idle = 0;
     float pct;
